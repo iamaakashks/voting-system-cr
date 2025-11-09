@@ -97,7 +97,7 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
         const remappedCandidates = election.candidates.map(c => ({
             id: c.student.toString(),
             name: c.name,
-            imageUrl: `https://picsum.photos/seed/${c.name.replace(/\s+/g, '')}/400`
+            imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
         }));
         const results = election.candidates.reduce((acc, c) => {
             acc[c.student.toString()] = c.votes;
@@ -145,7 +145,7 @@ router.get('/teacher', protect, async (req: AuthRequest, res: Response) => {
       const remappedCandidates = e.candidates.map(c => ({
         id: c.student.toString(),
         name: c.name,
-        imageUrl: `https://picsum.photos/seed/${c.name.replace(/\s+/g, '')}/400`
+        imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
       }));
       
       const results = e.candidates.reduce((acc, c) => {
@@ -206,7 +206,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
     const remappedCandidates = election.candidates.map(c => ({
         id: c.student.toString(),
         name: c.name,
-        imageUrl: `https://picsum.photos/seed/${c.name.replace(/\s+/g, '')}/400`
+        imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
     }));
 
     const results = election.candidates.reduce((acc, c) => {
@@ -267,7 +267,7 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
     const remappedCandidates = fullElection!.candidates.map(c => ({
         id: c.student.toString(),
         name: c.name,
-        imageUrl: `https://picsum.photos/seed/${c.name.replace(/\s+/g, '')}/400`
+        imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
     }));
     const results = fullElection!.candidates.reduce((acc, c) => {
         acc[c.student.toString()] = c.votes;

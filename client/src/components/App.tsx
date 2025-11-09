@@ -4,7 +4,8 @@ import ElectionList from './ElectionList';
 import ElectionDetail from './ElectionDetail';
 import Notification from './Notification';
 import Spinner from './Spinner';
-import Login from './Login';
+import StudentLogin from './StudentLogin';
+import TeacherLogin from './TeacherLogin';
 import TeacherDashboard from './TeacherDashboard';
 import TransactionFeed from './TransactionFeed';
 import LandingPage from './LandingPage';
@@ -18,7 +19,7 @@ import {
   getElectionsForUser,
   getElectionsForTeacher,
   getElectionById,
-  postVote,
+  postVoteWithEmail,
   createElection,
   stopElection,
   getRecentTransactions,
@@ -41,7 +42,7 @@ const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [elections, setElections] = useState<Election[]>([]);
   const [selectedElection, setSelectedElection] = useState<Election | null>(null);
-  const [view, setView] = useState<'landing' | 'login' | 'student_dashboard' | 'teacher_dashboard' | 'election_detail' | 'create_election'>('landing');
+  const [view, setView] = useState<'landing' | 'student_login' | 'teacher_login' | 'student_dashboard' | 'teacher_dashboard' | 'election_detail' | 'create_election'>('landing');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [notification, setNotification] = useState<{ message: React.ReactNode; type: 'success' | 'error' } | null>(null);
   const [transactionFeed, setTransactionFeed] = useState<Transaction[]>([]);
@@ -153,7 +154,22 @@ const App: React.FC = () => {
       else await fetchTeacherData();
 
     } catch (error: any) {
-      const message = error.response?.data?.message || 'An unknown error occurred.';
+      console.error('Login error details:', error);
+      // Handle different types of errors
+      let message = 'An unknown error occurred.';
+      
+      if (error.message) {
+        message = error.message;
+      } else if (error.response?.data?.message) {
+        message = error.response.data.message;
+      } else if (error.response?.status === 401 || error.response?.status === 403) {
+        message = 'Invalid credentials. Please check your email, USN, and password.';
+      } else if (error.response?.status === 500) {
+        message = 'Server error. Please try again later.';
+      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
+        message = 'Cannot connect to server. Please check your connection and try again.';
+      }
+      
       showNotification(message, 'error');
     } finally {
       setIsLoading(false);
@@ -194,14 +210,14 @@ const App: React.FC = () => {
     setView(currentUser?.role === 'student' ? 'student_dashboard' : 'teacher_dashboard');
   };
 
-  const handleVote = useCallback(async (electionId: string, candidateId: string, ticket: string) => {
+  const handleVote = useCallback(async (electionId: string, candidateId: string, ticket: string, email: string) => {
     if (!currentUser) {
       showNotification('You must be logged in to vote.', 'error');
       return;
     }
     setIsLoading(true);
     try {
-      await postVote(electionId, candidateId, ticket);
+      await postVoteWithEmail(electionId, candidateId, ticket, email);
       const updatedElection = await getElectionById(electionId);
 
       setSelectedElection(updatedElection);
@@ -234,17 +250,19 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (isLoading && view !== 'landing') return <Spinner />;
+    if (isLoading && view !== 'landing' && view !== 'student_login' && view !== 'teacher_login') return <Spinner />;
 
     switch (view) {
       case 'landing':
         return <LandingPage 
-          onNavigateToLogin={() => setView('login')} 
-          onStudentLogin={() => setView('login')}
-          onTeacherLogin={() => setView('login')}
+          onNavigateToLogin={() => setView('student_login')} 
+          onStudentLogin={() => setView('student_login')}
+          onTeacherLogin={() => setView('teacher_login')}
         />;
-      case 'login':
-        return <Login onLogin={handleLogin} />;
+      case 'student_login':
+        return <StudentLogin onLogin={handleLogin} />;
+      case 'teacher_login':
+        return <TeacherLogin onLogin={handleLogin} />;
       case 'student_dashboard':
         return <ElectionList elections={elections} onSelectElection={handleSelectElection} userRole='student' />;
       case 'teacher_dashboard':
@@ -263,9 +281,9 @@ const App: React.FC = () => {
         ) : null;
       default:
         return <LandingPage 
-          onNavigateToLogin={() => setView('login')} 
-          onStudentLogin={() => setView('login')}
-          onTeacherLogin={() => setView('login')}
+          onNavigateToLogin={() => setView('student_login')} 
+          onStudentLogin={() => setView('student_login')}
+          onTeacherLogin={() => setView('teacher_login')}
         />;
     }
   };

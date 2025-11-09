@@ -51,14 +51,6 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
         onSelect(election.id);
     };
 
-    const copyTicket = (e: React.MouseEvent) => {
-        e.stopPropagation(); // Prevent card click when copying
-        if (election.userTicket) {
-            navigator.clipboard.writeText(election.userTicket);
-            // In a real app, you'd show a toast notification here
-            alert('Ticket copied to clipboard!');
-        }
-    }
 
     return (
       <div 
@@ -72,19 +64,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
           {election.description && <p className="text-gray-400 mb-6 h-20 overflow-hidden">{election.description}</p>}
         </div>
         
-        {userRole === 'student' && status.text === 'Live' && election.userTicket && !election.userVoted && (
-            <div className="bg-gray-900/50 px-6 py-4 border-t border-blue-500/30">
-                <p className="text-xs text-gray-400 mb-1">Your Voting Ticket:</p>
-                <div className="flex items-center justify-between gap-2">
-                    <code className="text-blue-300 font-mono font-bold text-lg tracking-widest">{election.userTicket}</code>
-                    <button onClick={copyTicket} className="p-2 rounded-md hover:bg-gray-700 transition-colors" title="Copy ticket">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        )}
+        {/* Tickets are now sent via email when user requests to vote */}
         
         {isClosed && winnerName && (
              <div className="bg-yellow-900/50 px-6 py-4 border-t border-yellow-500/30">

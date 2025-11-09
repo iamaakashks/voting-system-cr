@@ -1,22 +1,45 @@
 import nodemailer from 'nodemailer';
-import dotenv from "dotenv"
-dotenv.config()
+
 // Create transporter - configure based on your email service
+// Note: dotenv is already configured in index.ts, so environment variables are available
 // For development, you can use Gmail, or a service like SendGrid, Mailgun, etc.
 const createTransporter = () => {
   // Using Gmail as an example - you'll need to set up App Password in Gmail
   // For production, use a service like SendGrid, AWS SES, or Mailgun
+  const emailService = process.env.EMAIL_SERVICE || 'gmail';
+  const emailUser = process.env.EMAIL_USER;
+  const emailPassword = process.env.EMAIL_PASSWORD;
+
+  if (!emailUser || !emailPassword) {
+    console.warn('Email credentials not configured. Email functionality will not work.');
+    // Return a mock transporter that will fail gracefully
+    return nodemailer.createTransport({
+      host: 'smtp.example.com',
+      port: 587,
+      auth: {
+        user: 'dummy',
+        pass: 'dummy'
+      }
+    });
+  }
+
   return nodemailer.createTransport({
-    service: process.env.EMAIL_SERVICE || 'gmail',
+    service: emailService,
     auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASSWORD, // Use App Password for Gmail
+      user: emailUser,
+      pass: emailPassword, // Use App Password for Gmail
     },
   });
 };
 
 export const sendVotingTicket = async (email: string, ticket: string, electionTitle: string) => {
   try {
+    // Check if email is configured
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+      console.error('Email credentials not configured. Cannot send voting ticket.');
+      throw new Error('Email service is not configured. Please contact administrator.');
+    }
+
     const transporter = createTransporter();
 
     const mailOptions = {
@@ -57,9 +80,15 @@ This is an automated message from VeriVote System.
     await transporter.sendMail(mailOptions);
     console.log(`Voting ticket sent to ${email}`);
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error sending email:', error);
-    throw error;
+    // Provide more detailed error message
+    if (error.code === 'EAUTH') {
+      throw new Error('Email authentication failed. Please check email credentials.');
+    } else if (error.code === 'ECONNECTION') {
+      throw new Error('Could not connect to email server. Please check network connection.');
+    }
+    throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
   }
 };
 

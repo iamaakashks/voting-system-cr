@@ -9,7 +9,11 @@ const router = express.Router();
 
 // Helper to generate JWT
 const generateToken = (id: string, role: 'student' | 'teacher') => {
-  return jwt.sign({ user: { id, role } }, 'YOUR_JWT_SECRET', { expiresIn: '1d' });
+  const jwtSecret = process.env.JWT_SECRET || 'YOUR_JWT_SECRET_CHANGE_IN_PRODUCTION';
+  if (jwtSecret === 'YOUR_JWT_SECRET_CHANGE_IN_PRODUCTION' && process.env.NODE_ENV === 'production') {
+    console.error('WARNING: Using default JWT secret in production!');
+  }
+  return jwt.sign({ user: { id, role } }, jwtSecret, { expiresIn: '1d' });
 };
 
 // @route   POST api/auth/register-student
@@ -108,7 +112,15 @@ router.post('/login', async (req: Request, res: Response) => {
     res.json({ token, user: { ...userData, role } });
 
   } catch (err: any) {
-    res.status(500).json({ message: 'Server Error: ' + err.message });
+    console.error('Login error details:', {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    });
+    const errorMessage = process.env.NODE_ENV === 'production' 
+      ? 'An error occurred during login. Please try again.' 
+      : err.message || 'Internal server error';
+    res.status(500).json({ message: 'Server Error: ' + errorMessage });
   }
 });
 

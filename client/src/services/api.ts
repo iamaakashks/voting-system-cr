@@ -13,9 +13,40 @@ interface CreateElectionData {
 }
 
 // Create an Axios instance
+// Use environment variable for API URL, fallback to localhost for development
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Your server URL
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
+  timeout: 30000, // 30 second timeout
 });
+
+// Add request interceptor for debugging
+api.interceptors.request.use(
+  (config) => {
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    return config;
+  },
+  (error) => {
+    console.error('Request error:', error);
+    return Promise.reject(error);
+  }
+);
+
+// Add response interceptor for error logging
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    console.error('API Error:', {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      code: error.code
+    });
+    return Promise.reject(error);
+  }
+);
 
 // Helper to set the auth token on all requests
 export const setAuthToken = (token: string | null) => {
@@ -35,8 +66,17 @@ export interface LoginCredentials {
 // --- API Functions ---
 
 export const login = async (credentials: LoginCredentials): Promise<{token: string, user: User}> => {
-  const res = await api.post('/auth/login', credentials);
-  return res.data; // { token, user }
+  try {
+    const res = await api.post('/auth/login', credentials);
+    return res.data; // { token, user }
+  } catch (error: any) {
+    // Log full error for debugging
+    console.error('Login error:', error);
+    if (error.code === 'ERR_NETWORK' || error.message.includes('Network Error')) {
+      throw new Error('Cannot connect to server. Please check if the server is running and the API URL is correct.');
+    }
+    throw error;
+  }
 };
 
 export const getMe = async (): Promise<User> => {
@@ -80,7 +120,16 @@ export const searchStudents = async (branch: string, section: string, name: stri
 };
 
 export const getRecentTransactions = async (): Promise<Transaction[]> => {
-  // This route is still pointing to a mock, but it's wired up
   const res = await api.get('/transactions/recent');
+  return res.data;
+};
+
+export const requestVotingTicket = async (electionId: string): Promise<{ message: string; expiresIn: number }> => {
+  const res = await api.post('/tickets/request', { electionId });
+  return res.data;
+};
+
+export const postVoteWithEmail = async (electionId: string, candidateId: string, ticket: string, email: string): Promise<{ message: string, txHash: string }> => {
+  const res = await api.post('/vote', { electionId, candidateId, ticket, email });
   return res.data;
 };

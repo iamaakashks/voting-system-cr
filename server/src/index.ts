@@ -15,8 +15,20 @@ connectDB();
 const app = express();
 
 // Middleware
-app.use(cors());
+// CORS configuration - allow requests from client domain
+const corsOptions = {
+  origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || '*', // Allow all origins in development, restrict in production
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json());
+
+// Add request logging for debugging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  next();
+});
 
 app.get('/', (req, res) => {
   res.send('VeriVote API Running');
