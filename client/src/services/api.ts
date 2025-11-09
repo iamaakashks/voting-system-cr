@@ -14,7 +14,7 @@ interface CreateElectionData {
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api', // Your server URL
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', // Your server URL
 });
 
 // Helper to set the auth token on all requests
