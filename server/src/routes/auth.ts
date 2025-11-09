@@ -71,27 +71,32 @@ router.post('/login', async (req: Request, res: Response) => {
     if (usn && usn !== 'N/A') {
       user = await Student.findOne({ email: email.toLowerCase(), usn: usn.toUpperCase() });
       role = 'student';
+      console.log('Attempting to log in user as a student.');
     } 
     // Teacher login (email only, USN is 'N/A' from form)
     else {
       user = await Teacher.findOne({ email: email.toLowerCase() });
       role = 'teacher';
+      console.log('Attempting to log in user as a teacher.');
     }
 
     // --- FIX 1: Moved validation to after user is found ---
     // First, check if a user was found at all
     if (!user) {
+      console.error('User not found with provided credentials.');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Now, if it's a student, check their validity
     if (role === 'student' && !(user as IStudent).isValidStudent()) {
+        console.error('Student account is no longer valid.');
         return res.status(403).json({ message: 'This student account is no longer valid.' });
     }
     // --- End of Fix 1 ---
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
+      console.error('Password does not match.');
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
@@ -99,6 +104,7 @@ router.post('/login', async (req: Request, res: Response) => {
     
     const { password: _, ...userData } = user.toObject();
 
+    console.log(`User ${user.email} logged in successfully as a ${role}.`);
     res.json({ token, user: { ...userData, role } });
 
   } catch (err: any) {

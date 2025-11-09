@@ -180,12 +180,113 @@ const importData = async () => {
     await Teacher.insertMany(teachersToCreate);
     await Student.insertMany(studentsToCreate);
 
+    console.log('Generating elections...');
+    await createElections(teachersToCreate, studentsToCreate);
+
     console.log('✅ Data Imported Successfully!');
     process.exit();
 
   } catch (error) {
     console.error(`Error importing data: ${error}`);
     process.exit(1);
+  }
+};
+
+// --- Create Elections Function ---
+const createElections = async (teachers: any[], students: any[]) => {
+  const now = new Date();
+  const oneHour = 1000 * 60 * 60;
+  const oneDay = oneHour * 24;
+
+  const sampleElections = [
+    {
+      title: 'CR Election for CS-A',
+      description: 'Class Representative election for Computer Science, Section A.',
+      branch: 'cs',
+      section: 'a',
+      startTime: new Date(now.getTime() - oneHour * 2), // Started 2 hours ago
+      endTime: new Date(now.getTime() + oneHour * 22), // Ends in 22 hours
+      teacherEmail: 'teacher_cs@nie.ac.in',
+      candidateUSNs: ['4NI23CS002', '4NI23CS003', '4NI23CS004'] // Arjun Patel and some others
+    },
+    {
+      title: 'CR Election for ISE-B',
+      description: 'Class Representative election for Information Science, Section B.',
+      branch: 'ise',
+      section: 'b',
+      startTime: new Date(now.getTime() - oneDay), // Started 1 day ago
+      endTime: new Date(now.getTime() + oneDay * 2), // Ends in 2 days
+      teacherEmail: 'teacher_cs@nie.ac.in', // Can be any teacher
+      candidateUSNs: ['4NI23IS001', '4NI23IS002', '4NI23IS003']
+    },
+    {
+      title: 'Upcoming CR Election for CS-B',
+      description: 'Vote for your Class Representative!',
+      branch: 'cs',
+      section: 'b',
+      startTime: new Date(now.getTime() + oneDay), // Starts tomorrow
+      endTime: new Date(now.getTime() + oneDay * 3), // Ends in 3 days
+      teacherEmail: 'teacher_cs@nie.ac.in',
+      candidateUSNs: ['4NI23CS022', '4NI23CS023']
+    },
+    {
+      title: 'Past CR Election for CI-C',
+      description: 'Results are in for the CI-C CR election.',
+      branch: 'ci',
+      section: 'c',
+      startTime: new Date(now.getTime() - oneDay * 5), // Started 5 days ago
+      endTime: new Date(now.getTime() - oneDay * 3), // Ended 3 days ago
+      teacherEmail: 'teacher_ci@nie.ac.in',
+      candidateUSNs: ['4NI23CI042', '4NI23CI043']
+    }
+  ];
+
+  for (const electionData of sampleElections) {
+    const teacher = teachers.find(t => t.email === electionData.teacherEmail);
+    if (!teacher) {
+      console.warn(`Teacher with email ${electionData.teacherEmail} not found for election ${electionData.title}`);
+      continue;
+    }
+
+    const candidates = electionData.candidateUSNs.map(usn => {
+      const student = students.find(s => s.usn === usn);
+      if (!student) {
+        console.warn(`Candidate student with USN ${usn} not found for election ${electionData.title}`);
+        return null;
+      }
+      return { student: student._id, name: student.name, usn: student.usn, votes: Math.floor(Math.random() * 100) };
+    }).filter(Boolean);
+
+    if (candidates.length === 0) {
+      console.warn(`No valid candidates for election ${electionData.title}, skipping.`);
+      continue;
+    }
+
+    const newElection = new Election({
+      title: electionData.title,
+      description: electionData.description,
+      branch: electionData.branch,
+      section: electionData.section,
+      startTime: electionData.startTime,
+      endTime: electionData.endTime,
+      createdBy: teacher._id,
+      candidates: candidates
+    });
+    await newElection.save();
+
+    // Generate tickets for all eligible students
+    const eligibleStudents = await Student.find({ branch: electionData.branch, section: electionData.section });
+    const ticketsToCreate = eligibleStudents.map(student => ({
+      election: newElection._id,
+      student: student._id,
+      ticketString: Ticket.generateTicket(10),
+      used: false
+    }));
+
+    if (ticketsToCreate.length > 0) {
+      await Ticket.insertMany(ticketsToCreate);
+    }
+    console.log(`Created election: ${newElection.title} with ${ticketsToCreate.length} tickets.`);
   }
 };
 

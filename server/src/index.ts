@@ -4,6 +4,8 @@ import connectDB from './db';
 import authRoutes from './routes/auth';
 import electionRoutes from './routes/elections';
 import studentRoutes from './routes/students';
+import voteRoutes from './routes/vote'; // <-- IMPORT NEW
+import transactionRoutes from './routes/transactions'; // <-- IMPORT NEW
 
 // Connect to Database
 connectDB();
@@ -15,13 +17,15 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.send('VeriVote API Running');
+  res.send('VeriVote API Running');
 });
 
 // Define Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/elections', electionRoutes);
 app.use('/api/students', studentRoutes);
+app.use('/api/transactions', transactionRoutes); // <-- USE NEW ROUTER
+app.use('/api/vote', voteRoutes); // <-- USE NEW ROUTER
 
 const PORT = process.env.PORT || 5000;
 

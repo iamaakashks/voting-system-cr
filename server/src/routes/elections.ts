@@ -9,16 +9,11 @@ import { ITeacher } from '../models/Teacher';
 
 const router = express.Router();
 
-interface Transaction {
-  txHash: string;
-  electionTitle: string;
-  timestamp: string;
-}
-
 // @route   POST api/elections
 // @desc    Create a new election
 // @access  Private (Teacher)
 router.post('/', protect, async (req: AuthRequest, res: Response) => {
+  // ... (this route is fine)
   if (req.user?.role !== 'teacher') {
     return res.status(403).json({ message: 'Not authorized' });
   }
@@ -71,37 +66,59 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
   }
   
   try {
-    console.log('Fetching student data for user ID:', req.user.id);
+    // --- ADDED LOG 1 ---
+    console.log(`[LOG 1/5] Fetching student: ${req.user.id}`);
     const student = await Student.findById(req.user.id);
-    console.log('Found student:', student);
-    if (!student) return res.status(404).json({ message: 'Student not found' });
+    if (!student) {
+      console.error('[ERROR] Student not found in DB');
+      return res.status(404).json({ message: 'Student not found' });
+    }
 
-    console.log(`Finding elections for branch: ${student.branch}, section: ${student.section}`);
+    // --- ADDED LOG 2 ---
+    console.log(`[LOG 2/5] Finding elections for: ${student.branch} - ${student.section}`);
     const elections = await Election.find({
       branch: student.branch,
       section: student.section
     }).populate('createdBy', 'name').sort({ startTime: -1 });
-    console.log('Found elections:', elections);
 
+    // --- ADDED LOG 3 ---
+    console.log(`[LOG 3/5] Found ${elections.length} elections. Starting processing...`);
 
-    const electionsWithTickets = await Promise.all(
+    const electionsWithDetails = await Promise.all(
       elections.map(async (election) => {
         const ticket = await Ticket.findOne({
           election: election._id,
           student: student._id
         });
+
+        const remappedCandidates = election.candidates.map(c => ({
+            id: c.student.toString(),
+            name: c.name,
+            imageUrl: `https://picsum.photos/seed/${c.name.replace(/\s+/g, '')}/400`
+        }));
+        const results = election.candidates.reduce((acc, c) => {
+            acc[c.student.toString()] = c.votes;
+            return acc;
+        }, {} as { [candidateId: string]: number });
         
         return {
           ...election.toObject(),
           id: election._id,
           userVoted: ticket ? ticket.used : false,
           userTicket: (ticket && !ticket.used && new Date() < election.endTime && new Date() > election.startTime) ? ticket.ticketString : undefined,
+          candidates: remappedCandidates,
+          results: results,
         };
       })
     );
     
-    res.json(electionsWithTickets);
+    // --- ADDED LOG 4 ---
+    console.log('[LOG 4/5] Successfully processed all elections.');
+    res.json(electionsWithDetails);
+
   } catch (err: any) {
+    // --- ADDED LOG 5 ---
+    console.error('[LOG 5/5] CRITICAL ERROR in /api/elections/student:', err);
     res.status(500).json({ message: 'Server Error: ' + err.message });
   }
 });
@@ -110,6 +127,7 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
 // @desc    Get all elections for the logged-in teacher
 // @access  Private (Teacher)
 router.get('/teacher', protect, async (req: AuthRequest, res: Response) => {
+  // ... (this route is fine)
   if (req.user?.role !== 'teacher') {
     return res.status(403).json({ message: 'Not authorized' });
   }
@@ -134,6 +152,7 @@ router.get('/teacher', protect, async (req: AuthRequest, res: Response) => {
 // @desc    Get a single election by ID
 // @access  Private
 router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
+  // ... (this route is fine)
   try {
     if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
       return res.status(400).json({ message: 'Invalid Election ID' });
@@ -152,7 +171,6 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
       });
     }
 
-    // Check if user is allowed to see this
     if (req.user?.role === 'student') {
       const student = await Student.findById(req.user.id);
       if (student?.branch !== election.branch || student?.section !== election.section) {
@@ -166,14 +184,12 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
       }
     }
     
-    // Remap candidates to match old format
     const remappedCandidates = election.candidates.map(c => ({
         id: c.student.toString(),
         name: c.name,
         imageUrl: `https://picsum.photos/seed/${c.name.replace(/\s+/g, '')}/400`
     }));
 
-    // Create results object
     const results = election.candidates.reduce((acc, c) => {
         acc[c.student.toString()] = c.votes;
         return acc;
@@ -198,6 +214,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
 // @desc    Manually stop an election
 // @access  Private (Teacher)
 router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
+  // ... (this route is fine)
   if (req.user?.role !== 'teacher') {
     return res.status(403).json({ message: 'Not authorized' });
   }
@@ -236,61 +253,6 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
   } catch (err: any) {
     res.status(500).json({ message: 'Server Error: ' + err.message });
   }
-});
-
-// @route   POST api/elections/vote
-// @desc    Cast a vote
-// @access  Private (Student)
-router.post('/vote', protect, async (req: AuthRequest, res: Response) => {
-  if (req.user?.role !== 'student') {
-    return res.status(403).json({ message: 'Not authorized' });
-  }
-  
-  const { electionId, candidateId, ticket } = req.body;
-  const studentId = req.user.id;
-
-  try {
-    const election = await Election.findById(electionId);
-    if (!election) return res.status(404).json({ message: 'Election not found' });
-    
-    const now = new Date();
-    if (now < election.startTime) return res.status(400).json({ message: 'Election has not started' });
-    if (now > election.endTime) return res.status(400).json({ message: 'Election has ended' });
-
-    const userTicket = await Ticket.findOne({
-      election: electionId,
-      student: studentId,
-      ticketString: ticket
-    });
-    
-    if (!userTicket) return res.status(400).json({ message: 'Invalid ticket' });
-    if (userTicket.used) return res.status(400).json({ message: 'This ticket has already been used' });
-
-    userTicket.used = true;
-    
-    const mockTxHash = '0x' + crypto.randomBytes(32).toString('hex');
-    
-    await Election.updateOne(
-        { _id: electionId, "candidates.student": candidateId },
-        { $inc: { "candidates.$.votes": 1 } }
-    );
-    
-    await userTicket.save();
-    
-    res.json({ message: 'Vote cast successfully!', txHash: mockTxHash });
-
-  } catch (err: any) {
-    res.status(500).json({ message: 'Server Error: ' + err.message });
-  }
-});
-
-// @route   GET api/transactions/recent
-// @desc    Get recent transactions
-// @access  Private
-router.get('/transactions/recent', protect, async (req: AuthRequest, res: Response) => {
-    const mockTransactions: Transaction[] = [
-    ];
-    res.json(mockTransactions);
 });
 
 export default router;
