@@ -19,7 +19,7 @@ router.get('/recent', protect, async (req: AuthRequest, res: Response) => {
 
         const transactionsWithDetails = transactions.map(tx => ({
             txHash: tx.txHash,
-            electionTitle: (tx.election as any).title || 'Unknown Election',
+            electionTitle: tx.election ? (tx.election as any).title : 'Unknown Election',
             timestamp: tx.timestamp.toISOString()
         }));
 
