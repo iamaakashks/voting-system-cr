@@ -1,0 +1,5 @@
+{
+  "name": "VeriVote - Decentralized Voting System",
+  "description": "A decentralized voting system frontend that allows users to view elections, vote for candidates, and see transparent results. This application is designed to interact with a blockchain-based backend.",
+  "requestFramePermissions": []
+}
