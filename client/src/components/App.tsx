@@ -249,7 +249,11 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'landing':
-        return <LandingPage onNavigateToLogin={() => setView('login')} />;
+        return <LandingPage 
+          onNavigateToLogin={() => setView('login')} 
+          onStudentLogin={() => setView('login')}
+          onTeacherLogin={() => setView('login')}
+        />;
       case 'login':
         return <Login onLogin={handleLogin} />;
       case 'student_dashboard':
@@ -269,7 +273,11 @@ const App: React.FC = () => {
           />
         ) : null;
       default:
-        return <LandingPage onNavigateToLogin={() => setView('login')} />;
+        return <LandingPage 
+          onNavigateToLogin={() => setView('login')} 
+          onStudentLogin={() => setView('login')}
+          onTeacherLogin={() => setView('login')}
+        />;
     }
   };
 

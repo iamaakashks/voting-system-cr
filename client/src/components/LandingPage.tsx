@@ -2,6 +2,8 @@ import React from 'react';
 
 interface LandingPageProps {
     onNavigateToLogin: () => void;
+    onStudentLogin: () => void;
+    onTeacherLogin: () => void;
 }
 
 // Fix: Changed JSX.Element to React.ReactNode to resolve "Cannot find namespace 'JSX'" error.
@@ -15,7 +17,7 @@ const FeatureCard: React.FC<{ icon: React.ReactNode, title: string, children: Re
     </div>
 );
 
-const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) => {
+const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin, onStudentLogin, onTeacherLogin }) => {
     return (
         <div className="text-white">
             {/* Hero Section */}
@@ -26,12 +28,26 @@ const LandingPage: React.FC<LandingPageProps> = ({ onNavigateToLogin }) => {
                      </svg>
                     <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">Welcome to VeriVote</h1>
                     <p className="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-8">A secure, transparent, and decentralized voting platform for your college elections.</p>
-                    <button 
-                        onClick={onNavigateToLogin}
-                        className="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 text-lg"
-                    >
-                        Login to Vote
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <button 
+                            onClick={onStudentLogin}
+                            className="px-8 py-4 bg-blue-600 text-white font-bold rounded-lg shadow-lg hover:bg-blue-700 transition-all duration-300 transform hover:scale-105 text-lg flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            Student Login
+                        </button>
+                        <button 
+                            onClick={onTeacherLogin}
+                            className="px-8 py-4 bg-green-600 text-white font-bold rounded-lg shadow-lg hover:bg-green-700 transition-all duration-300 transform hover:scale-105 text-lg flex items-center gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                            </svg>
+                            Teacher Login
+                        </button>
+                    </div>
                 </div>
             </section>
 

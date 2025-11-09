@@ -116,17 +116,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                 </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
-                <button onClick={() => handleQuickLogin('2025cs_aarav_c@nie.ac.in', '4NI25CS001', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
-                    Student (CS-C)
+                <button onClick={() => handleQuickLogin('2023cs_demostudentcs_a@nie.ac.in', '4NI23CS001', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
+                    Student (CS-A)
                 </button>
                  <button onClick={() => handleQuickLogin('teacher_cs@nie.ac.in', 'N/A', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
                     Teacher (CS)
                 </button>
-                 <button onClick={() => handleQuickLogin('2024ise_ananya_b@nie.ac.in', '4NI24IS007', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
+                 <button onClick={() => handleQuickLogin('2023ise_demostudentise_b@nie.ac.in', '4NI23IS001', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
                     Student (ISE-B)
                 </button>
-                 <button onClick={() => handleQuickLogin('teacher_ec@nie.ac.in', 'N/A', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
-                    Teacher (EC)
+                 <button onClick={() => handleQuickLogin('teacher_ci@nie.ac.in', 'N/A', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
+                    Teacher (AI&ML)
                 </button>
             </div>
         </div>

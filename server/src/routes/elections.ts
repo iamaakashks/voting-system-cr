@@ -137,12 +137,27 @@ router.get('/teacher', protect, async (req: AuthRequest, res: Response) => {
       createdBy: req.user.id
     }).sort({ startTime: -1 });
     
-    const electionsWithId = elections.map(e => ({
-      ...e.toObject(),
-      id: e._id
-    }));
+    const electionsWithDetails = elections.map(e => {
+      const remappedCandidates = e.candidates.map(c => ({
+        id: c.student.toString(),
+        name: c.name,
+        imageUrl: `https://picsum.photos/seed/${c.name.replace(/\s+/g, '')}/400`
+      }));
+      
+      const results = e.candidates.reduce((acc, c) => {
+        acc[c.student.toString()] = c.votes;
+        return acc;
+      }, {} as { [candidateId: string]: number });
+      
+      return {
+        ...e.toObject(),
+        id: e._id,
+        candidates: remappedCandidates,
+        results: results,
+      };
+    });
 
-    res.json(electionsWithId);
+    res.json(electionsWithDetails);
   } catch (err: any) {
     res.status(500).json({ message: 'Server Error: ' + err.message });
   }

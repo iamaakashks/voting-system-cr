@@ -33,7 +33,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
 
     let winnerName = '';
     let winnerVotes = 0;
-    if (isClosed && election.candidates.length > 0 && Object.keys(election.results).length > 0) {
+    if (isClosed && election.candidates.length > 0 && election.results && Object.keys(election.results).length > 0) {
         try {
             const winnerId = Object.keys(election.results).reduce((a, b) => election.results[a] > election.results[b] ? a : b);
             const winner = election.candidates.find(c => c.id === winnerId);
