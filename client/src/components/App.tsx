@@ -201,22 +201,11 @@ const App: React.FC = () => {
     }
     setIsLoading(true);
     try {
-      const { txHash } = await postVote(electionId, candidateId, ticket);
+      await postVote(electionId, candidateId, ticket);
       const updatedElection = await getElectionById(electionId);
 
       setSelectedElection(updatedElection);
       setElections(prev => prev.map(e => e.id === electionId ? updatedElection : e));
-
-      const explorerUrl = `https://sepolia.etherscan.io/tx/${txHash}`;
-
-      showNotification(
-        <>Vote cast successfully!
-          <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="underline font-bold ml-2 hover:text-blue-200">
-            Verify on Etherscan
-          </a>
-        </>,
-        'success'
-      );
 
       await fetchRecentTransactions();
 

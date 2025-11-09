@@ -2,6 +2,7 @@ import express, { Response } from 'express';
 import { protect, AuthRequest } from '../middleware/auth';
 import Election from '../models/Election';
 import Ticket from '../models/Ticket';
+import Transaction from '../models/Transaction';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -45,7 +46,13 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     
     await userTicket.save();
     
-    // You should save the txHash to a new 'Transaction' collection here
+    // Save the transaction to the database
+    await Transaction.create({
+      txHash: mockTxHash,
+      election: electionId,
+      student: studentId,
+      timestamp: new Date()
+    });
 
     res.json({ message: 'Vote cast successfully!', txHash: mockTxHash });
 

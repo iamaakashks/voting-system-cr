@@ -69,7 +69,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
             <h3 className="text-xl font-bold text-blue-300">{election.title}</h3>
             <ElectionStatusBadge startTime={election.startTime} endTime={election.endTime} />
           </div>
-          <p className="text-gray-400 mb-6 h-20 overflow-hidden">{election.description}</p>
+          {election.description && <p className="text-gray-400 mb-6 h-20 overflow-hidden">{election.description}</p>}
         </div>
         
         {userRole === 'student' && status.text === 'Live' && election.userTicket && !election.userVoted && (

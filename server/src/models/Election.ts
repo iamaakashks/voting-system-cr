@@ -20,7 +20,7 @@ export interface IElection extends Document {
 
 const ElectionSchema: Schema = new Schema({
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String, required: false, default: '' },
   branch: { type: String, required: true },
   section: { type: String, required: true },
   startTime: { type: Date, required: true },

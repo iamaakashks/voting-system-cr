@@ -4,7 +4,7 @@ import { Election, User, Transaction } from '../types';
 // Define the shape of data from the new CreateElectionForm
 interface CreateElectionData {
   title: string;
-  description: string;
+  description?: string; // Optional description
   branch: string;
   section: string;
   startTime: string;
@@ -14,7 +14,7 @@ interface CreateElectionData {
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api', // Your server URL
+  baseURL: 'http://localhost:5000/api', // Your server URL
 });
 
 // Helper to set the auth token on all requests

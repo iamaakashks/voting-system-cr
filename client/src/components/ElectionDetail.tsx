@@ -70,15 +70,14 @@ const CandidateCard: React.FC<{
   </div>
 );
 
-const VoteVerification: React.FC<{ txHash: string }> = ({ txHash }) => {
-  const explorerUrl = `https://sepolia.etherscan.io/tx/${txHash}`;
+const ThanksForVoting: React.FC = () => {
   return (
-    <div className="bg-green-500/10 border border-green-500 text-green-300 rounded-lg p-6 text-center shadow-lg">
-      <h4 className="text-2xl font-bold text-white mb-3">Vote Confirmed on Blockchain</h4>
-      <a href={explorerUrl} target="_blank" rel="noopener noreferrer" className="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg">
-        View Transaction
-      </a>
-      <p className="text-xs text-gray-400 mt-3 truncate">{txHash}</p>
+    <div className="bg-green-500/10 border border-green-500 text-green-300 rounded-lg p-12 text-center shadow-lg">
+      <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 text-green-400 mx-auto mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <h4 className="text-3xl font-bold text-white mb-2">Thanks for Voting!</h4>
+      <p className="text-lg text-gray-300">Your vote has been recorded successfully.</p>
     </div>
   );
 };
@@ -157,7 +156,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
       <button onClick={onBack} className="text-blue-400 font-semibold">&larr; Back</button>
 
       <h2 className="text-4xl font-extrabold text-center text-white">{election.title}</h2>
-      <p className="text-center text-gray-400">{election.description}</p>
+      {election.description && <p className="text-center text-gray-400">{election.description}</p>}
 
       <div className="flex justify-center">
         <div className="p-4 rounded-lg bg-gray-700 text-center">
@@ -179,8 +178,8 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
 
       <h3 className="text-2xl font-bold text-center">Candidates</h3>
 
-      {election.userVoted && election.userVoteTxHash ? (
-        <VoteVerification txHash={election.userVoteTxHash} />
+      {election.userVoted ? (
+        <ThanksForVoting />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {election.candidates.map(candidate => (

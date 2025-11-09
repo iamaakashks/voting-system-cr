@@ -5,7 +5,7 @@ import { searchStudents } from '../services/api';
 // Define the shape of data for the form
 interface CreateElectionData {
   title: string;
-  description: string;
+  description?: string; // Optional description
   branch: string;
   section: string;
   startTime: string;
@@ -82,8 +82,8 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
         
         {/* Description */}
         <div>
-          <label htmlFor="description" className="block text-sm font-medium text-gray-300">Description</label>
-          <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} required rows={3} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500"></textarea>
+          <label htmlFor="description" className="block text-sm font-medium text-gray-300">Description <span className="text-gray-500 text-xs">(Optional)</span></label>
+          <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500"></textarea>
         </div>
         
         {/* Branch and Section */}
@@ -92,10 +92,8 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
             <label htmlFor="branch" className="block text-sm font-medium text-gray-300">Branch</label>
             <select id="branch" value={branch} onChange={e => setBranch(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500">
               <option value="cs">Computer Science (CS)</option>
+              <option value="ci">CS - AI/ML (CI)</option>
               <option value="ise">Information Science (ISE)</option>
-              <option value="csa">CS - AI/ML (CSA)</option>
-              <option value="ec">Electronics (EC)</option>
-              <option value="me">Mechanical (ME)</option>
             </select>
           </div>
           <div>

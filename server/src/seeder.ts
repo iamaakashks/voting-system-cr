@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import connectDB from './db';
@@ -95,6 +96,29 @@ const importData = async () => {
       section: 'b'
     });
 
+    // ---------------- 2022 ADMISSION YEAR STUDENTS (CI-A) -----------------
+    const admissionYear2022 = 2022;
+    const yearYY2022 = String(admissionYear2022).slice(-2);
+    const ci2022Students = [
+      { name: 'Aakash Kumar Suman', email: '2022ci_aakashkumarsuman_a@nie.ac.in', usn: `4NI${yearYY2022}CI001` },
+      { name: 'Rishav Gupta', email: '2022ci_rishavgupta_a@nie.ac.in', usn: `4NI${yearYY2022}CI002` },
+      { name: 'Monu Kumar Shekhar', email: '2022ci_monukumarshekhar_a@nie.ac.in', usn: `4NI${yearYY2022}CI003` },
+      { name: 'Adwaitha', email: '2022ci_adwaitha_a@nie.ac.in', usn: `4NI${yearYY2022}CI004` }
+    ];
+
+    for (const student of ci2022Students) {
+      studentsToCreate.push({
+        usn: student.usn,
+        name: student.name,
+        email: student.email,
+        password: hashedPassword,
+        admissionYear: admissionYear2022,
+        branch: 'ci',
+        section: 'a'
+      });
+      usedEmails.add(student.email);
+    }
+
     // Demo Teacher CS
     teachersToCreate.push({
       teacherId: 'NI20CS001',
@@ -177,11 +201,11 @@ const importData = async () => {
     console.log(`Generating ${studentsToCreate.length} students...`);
 
     // Insert into DB
-    await Teacher.insertMany(teachersToCreate);
-    await Student.insertMany(studentsToCreate);
+    const insertedTeachers = await Teacher.insertMany(teachersToCreate);
+    const insertedStudents = await Student.insertMany(studentsToCreate);
 
     console.log('Generating elections...');
-    await createElections(teachersToCreate, studentsToCreate);
+    await createElections(insertedTeachers, insertedStudents);
 
     console.log('✅ Data Imported Successfully!');
     process.exit();

@@ -1,35 +1,33 @@
 import express, { Response } from 'express';
 import { protect, AuthRequest } from '../middleware/auth';
-import crypto from 'crypto';
+import Transaction from '../models/Transaction';
+import Election from '../models/Election';
 
 const router = express.Router();
-
-// Define the Transaction type locally
-interface Transaction {
-  txHash: string;
-  electionTitle: string;
-  timestamp: string;
-}
 
 // @route   GET api/transactions/recent
 // @desc    Get recent transactions
 // @access  Private
 router.get('/recent', protect, async (req: AuthRequest, res: Response) => {
-    // This route provides mock data.
-    // In a real app, you would query your 'Transaction' collection here.
-    const mockTransactions: Transaction[] = [
-        {
-            txHash: '0x' + crypto.randomBytes(32).toString('hex'),
-            electionTitle: 'Mock CR Election (CS-A)',
-            timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(),
-        },
-        {
-            txHash: '0x' + crypto.randomBytes(32).toString('hex'),
-            electionTitle: 'Mock CR Election (ISE-B)',
-            timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(),
-        },
-    ];
-    res.json(mockTransactions);
+    try {
+        // Return empty array initially - only show transactions when votes are cast
+        const transactions = await Transaction.find()
+            .populate('election', 'title')
+            .sort({ timestamp: -1 })
+            .limit(10)
+            .lean();
+
+        const transactionsWithDetails = transactions.map(tx => ({
+            txHash: tx.txHash,
+            electionTitle: (tx.election as any).title || 'Unknown Election',
+            timestamp: tx.timestamp.toISOString()
+        }));
+
+        res.json(transactionsWithDetails);
+    } catch (err: any) {
+        console.error('Error fetching transactions:', err);
+        res.json([]); // Return empty array on error
+    }
 });
 
 export default router;

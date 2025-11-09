@@ -19,7 +19,7 @@ export interface User {
 export interface Election {
   id:string;
   title: string;
-  description: string;
+  description?: string; // Optional description
   branch: string; // e.g., 'cs', 'ec'
   section: string; // e.g., 'a', 'b'
   startTime: string; // ISO 8601 format

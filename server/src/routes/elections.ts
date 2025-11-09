@@ -3,6 +3,7 @@ import { protect, AuthRequest } from '../middleware/auth';
 import Election, { IElection } from '../models/Election';
 import Student from '../models/Student';
 import Ticket from '../models/Ticket';
+import Transaction from '../models/Transaction';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 import { ITeacher } from '../models/Teacher';
@@ -23,7 +24,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
   try {
     const newElection = new Election({
       title,
-      description,
+      description: description || '',
       branch,
       section,
       startTime,
@@ -91,6 +92,18 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
           student: student._id
         });
 
+        // Get transaction hash if user has voted
+        let userVoteTxHash = undefined;
+        if (ticket && ticket.used) {
+          const transaction = await Transaction.findOne({
+            election: election._id,
+            student: student._id
+          }).sort({ timestamp: -1 });
+          if (transaction) {
+            userVoteTxHash = transaction.txHash;
+          }
+        }
+
         const remappedCandidates = election.candidates.map(c => ({
             id: c.student.toString(),
             name: c.name,
@@ -105,6 +118,7 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
           ...election.toObject(),
           id: election._id,
           userVoted: ticket ? ticket.used : false,
+          userVoteTxHash: userVoteTxHash,
           userTicket: (ticket && !ticket.used && new Date() < election.endTime && new Date() > election.startTime) ? ticket.ticketString : undefined,
           candidates: remappedCandidates,
           results: results,
@@ -210,10 +224,23 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
         return acc;
     }, {} as { [candidateId: string]: number });
 
+    // Get transaction hash if user has voted
+    let userVoteTxHash = undefined;
+    if (userTicket && userTicket.used && req.user?.role === 'student') {
+      const transaction = await Transaction.findOne({
+        election: election._id,
+        student: req.user.id
+      }).sort({ timestamp: -1 });
+      if (transaction) {
+        userVoteTxHash = transaction.txHash;
+      }
+    }
+
     res.json({
       ...election.toObject(),
       id: election._id,
       userVoted: userTicket ? userTicket.used : false,
+      userVoteTxHash: userVoteTxHash,
       userTicket: (userTicket && !userTicket.used && new Date() < election.endTime && new Date() > election.startTime) ? userTicket.ticketString : undefined,
       candidates: remappedCandidates,
       results: results,
