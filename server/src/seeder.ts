@@ -298,19 +298,9 @@ const createElections = async (teachers: any[], students: any[]) => {
     });
     await newElection.save();
 
-    // Generate tickets for all eligible students
-    const eligibleStudents = await Student.find({ branch: electionData.branch, section: electionData.section });
-    const ticketsToCreate = eligibleStudents.map(student => ({
-      election: newElection._id,
-      student: student._id,
-      ticketString: Ticket.generateTicket(10),
-      used: false
-    }));
-
-    if (ticketsToCreate.length > 0) {
-      await Ticket.insertMany(ticketsToCreate);
-    }
-    console.log(`Created election: ${newElection.title} with ${ticketsToCreate.length} tickets.`);
+    // Tickets are now generated on-demand when students request to vote
+    // They are sent via email with 5-minute expiration
+    console.log(`Created election: ${newElection.title}. Tickets will be generated on-demand when students vote.`);
   }
 };
 

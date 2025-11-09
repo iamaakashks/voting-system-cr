@@ -38,18 +38,8 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     });
     await newElection.save();
 
-    const eligibleStudents = await Student.find({ branch, section });
-
-    const ticketsToCreate = eligibleStudents.map(student => ({
-      election: newElection._id,
-      student: student._id,
-      ticketString: Ticket.generateTicket(10),
-      used: false
-    }));
-    
-    if (ticketsToCreate.length > 0) {
-      await Ticket.insertMany(ticketsToCreate);
-    }
+    // Tickets will be generated on-demand when students request to vote
+    // This ensures tickets are sent via email and have expiration times
     
     res.status(201).json(newElection);
 

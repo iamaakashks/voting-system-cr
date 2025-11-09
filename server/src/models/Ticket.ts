@@ -7,6 +7,8 @@ export interface ITicket extends Document {
   student: Schema.Types.ObjectId;
   ticketString: string;
   used: boolean;
+  expiresAt: Date;
+  email: string; // Student's email for validation
 }
 
 // --- NEW ---
@@ -21,6 +23,8 @@ const TicketSchema: Schema = new Schema({
   student: { type: Schema.Types.ObjectId, ref: 'Student', required: true },
   ticketString: { type: String, required: true, unique: true },
   used: { type: Boolean, default: false },
+  expiresAt: { type: Date, required: true },
+  email: { type: String, required: true, lowercase: true },
 });
 
 TicketSchema.index({ election: 1, student: 1 }, { unique: true });
