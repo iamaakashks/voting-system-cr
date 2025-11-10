@@ -165,12 +165,11 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
   const isElectionLive = new Date() > new Date(election.startTime) && !isElectionOver;
   const showResults = isElectionOver || user?.role === 'teacher';
 
-  let winner: Candidate | null = null;
+  let winners: Candidate[] = [];
   if (isElectionOver && election.results && Object.keys(election.results).length > 0) {
-    const winnerId = Object.keys(election.results).reduce((a, b) =>
-      election.results[a] > election.results[b] ? a : b
-    );
-    winner = election.candidates.find(c => c.id === winnerId) || null;
+    const maxVotes = Math.max(...Object.values(election.results));
+    const winnerIds = Object.keys(election.results).filter(id => election.results[id] === maxVotes);
+    winners = election.candidates.filter(c => winnerIds.includes(c.id));
   }
 
   const handleInitiateVote = async (candidateId: string) => {
@@ -282,11 +281,15 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
       <div className="bg-gray-800 p-6 rounded-lg shadow-xl">
         {showResults ? (
           <>
-            {winner && (
+            {winners.length > 0 && (
               <div className="text-center mb-6 bg-yellow-500/10 border border-yellow-500 p-4 rounded-lg">
-                <h4 className="text-lg font-bold text-yellow-300">Winner</h4>
-                <p className="text-2xl font-extrabold text-white">{winner.name}</p>
-                <p className="text-gray-400">Votes: {election.results[winner.id]}</p>
+                <h4 className="text-lg font-bold text-yellow-300">{winners.length > 1 ? 'Winners (Tie)' : 'Winner'}</h4>
+                {winners.map(winner => (
+                  <div key={winner.id} className="mt-2">
+                    <p className="text-2xl font-extrabold text-white">{winner.name}</p>
+                    <p className="text-gray-400">Votes: {election.results[winner.id]}</p>
+                  </div>
+                ))}
               </div>
             )}
             <ResultsChart candidates={election.candidates} results={election.results} />
