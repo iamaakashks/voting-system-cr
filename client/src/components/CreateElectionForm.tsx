@@ -64,8 +64,8 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
       description,
       branch,
       section,
-      startTime,
-      endTime,
+      startTime: new Date(startTime).toISOString(),
+      endTime: new Date(endTime).toISOString(),
       candidates: candidates.map(c => ({ id: c.value, name: c.name, usn: c.usn })),
     });
   };
