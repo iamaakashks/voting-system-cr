@@ -9,14 +9,15 @@ Set the following environment variables in Render:
 
 ```
 MONGO_URI=your_mongodb_connection_string
-PORT=5000
+PORT=10000 # Render services must bind to port 10000
 NODE_ENV=production
-CLIENT_URL=https://your-vercel-app.vercel.app
+CLIENT_URL=https://your-vercel-app.vercel.app # Your deployed Vercel frontend URL
 EMAIL_SERVICE=gmail
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
 JWT_SECRET=your_jwt_secret_key
 ```
+**Note:** For enhanced security, you should update `server/src/index.ts` to use `CLIENT_URL` for CORS configuration instead of `app.use(cors())`.
 
 ### 2. Build Settings
 - **Build Command**: `npm install && npm run build`
@@ -84,10 +85,11 @@ VITE_API_URL=https://your-render-app.onrender.com/api
    - Network timeout: Render services may take a moment to wake up if idle
    - Database connection: Verify MONGO_URI is correct and database is accessible
    - JWT secret mismatch: Ensure JWT_SECRET is the same (though this shouldn't cause login to fail, it would cause auth to fail later)
+   - **Local Environment Variables**: If running locally, ensure `dotenv` is installed in the `server` directory (`npm install dotenv`) and `import 'dotenv/config';` is the very first line in `server/src/index.ts` and `server/src/seeder.ts`.
 
 ### CORS Errors
 - Make sure `CLIENT_URL` in Render matches your Vercel deployment URL exactly
-- Check that CORS middleware is configured correctly
+- Check that CORS middleware is configured correctly (consider using `cors({ origin: process.env.CLIENT_URL, credentials: true })` in `server/src/index.ts`)
 - Verify the backend allows credentials
 
 ### Database Connection Issues
@@ -119,12 +121,13 @@ VITE_API_URL=http://localhost:5000/api
 And in the `server` directory:
 
 ```
-MONGO_URI=your_local_mongodb_uri
+MONGO_URI=your_local_mongodb_uri_or_atlas_one
 PORT=5000
-CLIENT_URL=http://localhost:3000
+CLIENT_URL=http://localhost:5173 # Or whatever port your Vite dev server runs on
 EMAIL_SERVICE=gmail
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASSWORD=your-app-password
 JWT_SECRET=your_jwt_secret
 ```
+**Important:** Ensure `dotenv` is installed in your `server` directory (`npm install dotenv`) and `import 'dotenv/config';` is the very first line in both `server/src/index.ts` and `server/src/seeder.ts` to load these environment variables.
 

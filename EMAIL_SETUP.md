@@ -74,3 +74,4 @@ After setting up email, test the system by:
 - Tickets are validated using both email and ticket string
 - Old unused tickets are automatically deleted when a new ticket is requested
 
+
