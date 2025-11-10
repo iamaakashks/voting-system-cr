@@ -32,14 +32,22 @@ EMAIL_PASSWORD=your-app-password
 
 ## Alternative Email Services
 
-### SendGrid
-```env
-EMAIL_SERVICE=smtp
-EMAIL_HOST=smtp.sendgrid.net
-EMAIL_PORT=587
-EMAIL_USER=apikey
-EMAIL_PASSWORD=your-sendgrid-api-key
-```
+### SendGrid (Recommended for Render)
+
+If you are deploying on Render or another platform that blocks SMTP, using the SendGrid API is the recommended approach.
+
+1.  **Create a SendGrid Account:** Sign up for a free account at [sendgrid.com](https://sendgrid.com).
+2.  **Create an API Key:** Go to **Settings -> API Keys** in your SendGrid dashboard and create a new API key with "Full Access".
+3.  **Verify a Sender:** You must verify a "Single Sender" or a "Domain" to send emails from. This is a security measure to prevent spam. You can do this in the **Settings -> Sender Authentication** section of your SendGrid dashboard.
+4.  **Set Environment Variables:** Update your `.env` file in the `server` directory with the following:
+
+    ```env
+    SENDGRID_API_KEY=your-sendgrid-api-key
+    EMAIL_FROM=your-verified-sender-email@example.com
+    ```
+
+    - `SENDGRID_API_KEY`: The API key you generated in step 2.
+    - `EMAIL_FROM`: The email address you verified in step 3.
 
 ### Mailgun
 ```env
