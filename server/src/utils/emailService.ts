@@ -4,43 +4,54 @@ import nodemailer from 'nodemailer';
 // Note: dotenv is already configured in index.ts, so environment variables are available
 // For development, you can use Gmail, or a service like SendGrid, Mailgun, etc.
 const createTransporter = () => {
-  // Using Gmail as an example - you'll need to set up App Password in Gmail
-  // For production, use a service like SendGrid, AWS SES, or Mailgun
-  const emailService = process.env.EMAIL_SERVICE || 'gmail';
+  const emailService = process.env.EMAIL_SERVICE?.toLowerCase();
   const emailUser = process.env.EMAIL_USER;
   const emailPassword = process.env.EMAIL_PASSWORD;
+  const emailHost = process.env.EMAIL_HOST;
+  const emailPort = process.env.EMAIL_PORT;
 
   if (!emailUser || !emailPassword) {
     console.warn('Email credentials not configured. Email functionality will not work.');
-    // Return a mock transporter that will fail gracefully
-    return nodemailer.createTransport({
-      host: 'smtp.example.com',
-      port: 587,
-      auth: {
-        user: 'dummy',
-        pass: 'dummy'
-      }
-    });
+    return null; // Return null to indicate failure
   }
 
-  return nodemailer.createTransport({
-    service: emailService,
-    auth: {
-      user: emailUser,
-      pass: emailPassword, // Use App Password for Gmail
-    },
-  });
+  let transporter;
+
+  if (emailService === 'smtp' && emailHost && emailPort) {
+    transporter = nodemailer.createTransport({
+      host: emailHost,
+      port: parseInt(emailPort, 10),
+      secure: parseInt(emailPort, 10) === 465, // true for 465, false for other ports
+      auth: {
+        user: emailUser,
+        pass: emailPassword,
+      },
+    });
+  } else if (emailService) {
+    transporter = nodemailer.createTransport({
+      service: emailService,
+      auth: {
+        user: emailUser,
+        pass: emailPassword,
+      },
+    });
+  } else {
+    console.warn('Email service type not specified or invalid. Defaulting to a mock transporter.');
+    return null;
+  }
+
+  return transporter;
 };
 
 export const sendVotingTicket = async (email: string, ticket: string, electionTitle: string) => {
-  try {
-    // Check if email is configured
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
-      console.error('Email credentials not configured. Cannot send voting ticket.');
-      throw new Error('Email service is not configured. Please contact administrator.');
-    }
+  const transporter = createTransporter();
 
-    const transporter = createTransporter();
+  if (!transporter) {
+    console.error('Email transporter could not be created. Check your environment variables.');
+    throw new Error('Email service is not configured correctly.');
+  }
+
+  try {
 
     const mailOptions = {
       from: process.env.EMAIL_USER,
