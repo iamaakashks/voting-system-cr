@@ -5,6 +5,7 @@ import Student from '../models/Student';
 import Ticket from '../models/Ticket';
 import Transaction from '../models/Transaction';
 import mongoose from 'mongoose';
+import { sendNewElectionNotification } from '../utils/emailService';
 import crypto from 'crypto';
 import { ITeacher } from '../models/Teacher';
 
@@ -40,6 +41,19 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
 
     // Tickets will be generated on-demand when students request to vote
     // This ensures tickets are sent via email and have expiration times
+    
+    // Send email notification to students
+    const students = await Student.find({ branch, section });
+    const studentEmails = students.map(student => student.email);
+
+    if (studentEmails.length > 0) {
+      try {
+        await sendNewElectionNotification(studentEmails, title, new Date(startTime), new Date(endTime));
+      } catch (emailError) {
+        console.error('Failed to send new election notification emails:', emailError);
+        // Don't block the response for email errors, just log it
+      }
+    }
     
     res.status(201).json(newElection);
 

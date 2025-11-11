@@ -35,11 +35,20 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
     let winnerVotes = 0;
     if (isClosed && election.candidates.length > 0 && election.results && Object.keys(election.results).length > 0) {
         try {
-            const winnerId = Object.keys(election.results).reduce((a, b) => election.results[a] > election.results[b] ? a : b);
-            const winner = election.candidates.find(c => c.id === winnerId);
-            if (winner) {
-                winnerName = winner.name;
-                winnerVotes = election.results[winnerId];
+            const voteCounts = Object.values(election.results);
+            const maxVotes = Math.max(...voteCounts);
+            const winners = Object.keys(election.results).filter(id => election.results[id] === maxVotes);
+
+            if (winners.length > 1) {
+                winnerName = 'Tie';
+                winnerVotes = maxVotes;
+            } else {
+                const winnerId = winners[0];
+                const winner = election.candidates.find(c => c.id === winnerId);
+                if (winner) {
+                    winnerName = winner.name;
+                    winnerVotes = maxVotes;
+                }
             }
         } catch(e) {
             console.error("Could not determine winner", e);
