@@ -43,15 +43,23 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     // This ensures tickets are sent via email and have expiration times
     
     // Send email notification to students
-    const students = await Student.find({ branch, section });
-    const studentEmails = students.map(student => student.email);
+    if (candidates && candidates.length > 0) {
+      const firstCandidateId = candidates[0].id;
+      const student = await Student.findById(firstCandidateId);
 
-    if (studentEmails.length > 0) {
-      try {
-        await sendNewElectionNotification(studentEmails, title, new Date(startTime), new Date(endTime));
-      } catch (emailError) {
-        console.error('Failed to send new election notification emails:', emailError);
-        // Don't block the response for email errors, just log it
+      if (student) {
+        const admissionYear = student.admissionYear;
+        const students = await Student.find({ branch, section, admissionYear });
+        const studentEmails = students.map(student => student.email);
+
+        if (studentEmails.length > 0) {
+          try {
+            await sendNewElectionNotification(studentEmails, title, new Date(startTime), new Date(endTime));
+          } catch (emailError) {
+            console.error('Failed to send new election notification emails:', emailError);
+            // Don't block the response for email errors, just log it
+          }
+        }
       }
     }
     
