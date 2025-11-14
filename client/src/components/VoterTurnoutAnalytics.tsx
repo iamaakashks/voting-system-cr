@@ -7,6 +7,19 @@ interface VoterTurnoutAnalyticsProps {
 }
 
 const VoterTurnoutAnalytics: React.FC<VoterTurnoutAnalyticsProps> = ({ data }) => {
+  // Convert ISO timestamps to local time for display
+  const chartData = {
+    ...data,
+    timeline: data.timeline.map(item => ({
+      ...item,
+      time: new Date(item.time).toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit', 
+        hour12: true 
+      })
+    }))
+  };
+
   const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -50,7 +63,7 @@ const VoterTurnoutAnalytics: React.FC<VoterTurnoutAnalyticsProps> = ({ data }) =
         <div style={{ width: '100%', height: 400 }}>
           <ResponsiveContainer>
             <LineChart
-              data={data.timeline}
+              data={chartData.timeline}
               margin={{
                 top: 5,
                 right: 30,

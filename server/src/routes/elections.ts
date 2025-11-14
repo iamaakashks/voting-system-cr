@@ -281,48 +281,49 @@ router.get('/:id/timeline', protect, async (req: AuthRequest, res: Response) => 
       .sort({ timestamp: 1 })
       .populate('student', 'gender');
 
-    // Group votes by minute using local time
+    // Group votes by minute using UTC to avoid timezone issues
     const timelineData: { [key: string]: number } = {};
     const startTime = new Date(election.startTime);
     const endTime = new Date(election.endTime);
 
-    // Helper function to get local time key (YYYY-MM-DDTHH:mm in local time)
-    const getLocalTimeKey = (date: Date): string => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const hours = String(date.getHours()).padStart(2, '0');
-      const minutes = String(date.getMinutes()).padStart(2, '0');
+    // Helper function to get UTC time key (YYYY-MM-DDTHH:mm in UTC)
+    const getUTCTimeKey = (date: Date): string => {
+      const year = date.getUTCFullYear();
+      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+      const day = String(date.getUTCDate()).padStart(2, '0');
+      const hours = String(date.getUTCHours()).padStart(2, '0');
+      const minutes = String(date.getUTCMinutes()).padStart(2, '0');
       return `${year}-${month}-${day}T${hours}:${minutes}`;
     };
 
-    // Initialize all minutes with 0 votes
-    for (let time = new Date(startTime); time <= endTime; time.setMinutes(time.getMinutes() + 1)) {
-      const minuteKey = getLocalTimeKey(time);
+    // Initialize all minutes with 0 votes (using UTC)
+    for (let time = new Date(startTime); time <= endTime; time.setUTCMinutes(time.getUTCMinutes() + 1)) {
+      const minuteKey = getUTCTimeKey(time);
       timelineData[minuteKey] = 0;
     }
 
-    // Count votes per minute
+    // Count votes per minute (using UTC)
     transactions.forEach(transaction => {
       const voteTime = new Date(transaction.timestamp);
-      const minuteKey = getLocalTimeKey(voteTime);
+      const minuteKey = getUTCTimeKey(voteTime);
       if (timelineData[minuteKey] !== undefined) {
         timelineData[minuteKey]++;
       }
     });
 
-    // Convert to array format for chart
+    // Convert to array format for chart - send ISO timestamps
     const timeline = Object.entries(timelineData)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([timeKey, votes]) => {
-        // Parse the local time key back to a date for display
+        // Parse the UTC time key and create a proper UTC date
         const [datePart, timePart] = timeKey.split('T');
         const [year, month, day] = datePart.split('-').map(Number);
         const [hours, minutes] = timePart.split(':').map(Number);
-        const localDate = new Date(year, month - 1, day, hours, minutes);
+        // Create date in UTC
+        const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
         
         return {
-          time: localDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+          time: utcDate.toISOString(), // Send ISO string for frontend conversion
           votes: votes,
           timestamp: timeKey
         };
@@ -375,8 +376,8 @@ router.get('/:id/turnout', protect, async (req: AuthRequest, res: Response) => {
     const turnoutTimeline: { time: string; votes: number; percentage: number }[] = [];
     let cumulativeVotes = 0;
 
-    // Create timeline with cumulative votes (using local time)
-    for (let time = new Date(startTime); time <= now; time.setMinutes(time.getMinutes() + 1)) {
+    // Create timeline with cumulative votes (using UTC to avoid timezone issues)
+    for (let time = new Date(startTime); time <= now; time.setUTCMinutes(time.getUTCMinutes() + 1)) {
       const votesInMinute = transactions.filter(t => {
         const voteTime = new Date(t.timestamp);
         return voteTime >= new Date(time.getTime() - 60000) && voteTime < time;
@@ -386,7 +387,7 @@ router.get('/:id/turnout', protect, async (req: AuthRequest, res: Response) => {
       const percentage = eligibleVoters > 0 ? ((cumulativeVotes / eligibleVoters) * 100) : 0;
       
       turnoutTimeline.push({
-        time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true }),
+        time: time.toISOString(), // Send ISO string for frontend conversion
         votes: cumulativeVotes,
         percentage: parseFloat(percentage.toFixed(2))
       });
