@@ -57,17 +57,20 @@ const CandidateCard: React.FC<{
   candidate: Candidate;
   onInitiateVote: (candidateId: string) => void;
   buttonState: ReturnType<typeof getButtonState>;
-}> = ({ candidate, onInitiateVote, buttonState }) => (
+  userRole?: 'student' | 'teacher';
+}> = ({ candidate, onInitiateVote, buttonState, userRole }) => (
   <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col items-center p-6 text-center">
     <img src={candidate.imageUrl} alt={candidate.name} className="w-32 h-32 rounded-full object-cover mb-4 border-4 border-gray-700" />
     <h4 className="text-lg font-semibold text-white mb-4">{candidate.name}</h4>
-    <button
-      onClick={() => onInitiateVote(candidate.id)}
-      disabled={buttonState.disabled}
-      className={`w-full py-2 px-4 rounded-md font-bold text-white transition-colors duration-300 ${buttonState.className}`}
-    >
-      {buttonState.text}
-    </button>
+    {userRole !== 'teacher' && (
+      <button
+        onClick={() => onInitiateVote(candidate.id)}
+        disabled={buttonState.disabled}
+        className={`w-full py-2 px-4 rounded-md font-bold text-white transition-colors duration-300 ${buttonState.className}`}
+      >
+        {buttonState.text}
+      </button>
+    )}
   </div>
 );
 
@@ -261,7 +264,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
 
       <h3 className="text-2xl font-bold text-center">Candidates</h3>
 
-      {election.userVoted ? (
+      {election.userVoted && user?.role !== 'teacher' ? (
         <ThanksForVoting />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -271,6 +274,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
               candidate={candidate}
               onInitiateVote={handleInitiateVote}
               buttonState={buttonState}
+              userRole={user?.role}
             />
           ))}
         </div>

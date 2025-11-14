@@ -32,7 +32,6 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
   const [branch, setBranch] = useState('cs');
   const [section, setSection] = useState('a');
   const [startTime, setStartTime] = useState('');
-  const [endTime, setEndTime] = useState('');
   const [candidates, setCandidates] = useState<CandidateOption[]>([]);
 
   // Async function for react-select to load student options
@@ -59,13 +58,22 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
       return;
     }
 
+    if (!startTime) {
+      alert("Please select a start time.");
+      return;
+    }
+
+    // Calculate end time as 10 minutes from start time
+    const startDate = new Date(startTime);
+    const endDate = new Date(startDate.getTime() + 10 * 60 * 1000); // Add 10 minutes
+
     onSubmit({
       title,
       description,
       branch,
       section,
-      startTime: new Date(startTime).toISOString(),
-      endTime: new Date(endTime).toISOString(),
+      startTime: startDate.toISOString(),
+      endTime: endDate.toISOString(),
       candidates: candidates.map(c => ({ id: c.value, name: c.name, usn: c.usn })),
     });
   };
@@ -106,16 +114,11 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
           </div>
         </div>
         
-        {/* Start and End Time */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="startTime" className="block text-sm font-medium text-gray-300">Start Time</label>
-            <input type="datetime-local" id="startTime" value={startTime} onChange={e => setStartTime(e.target.value)} required className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500" />
-          </div>
-          <div>
-            <label htmlFor="endTime" className="block text-sm font-medium text-gray-300">End Time</label>
-            <input type="datetime-local" id="endTime" value={endTime} onChange={e => setEndTime(e.target.value)} required className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500" />
-          </div>
+        {/* Start Time */}
+        <div>
+          <label htmlFor="startTime" className="block text-sm font-medium text-gray-300">Start Time</label>
+          <input type="datetime-local" id="startTime" value={startTime} onChange={e => setStartTime(e.target.value)} required className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500" />
+          <p className="text-xs text-gray-400 mt-1">Election will run for 10 minutes from the start time.</p>
         </div>
         
         {/* Candidates Search */}

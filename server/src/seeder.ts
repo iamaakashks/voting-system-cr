@@ -16,6 +16,20 @@ const lastNames = [
   'Patel', 'Sharma', 'Singh', 'Gupta', 'Kumar', 'Verma', 'Jain', 'Khan', 'Yadav', 'Reddy'
 ];
 
+// Gender mapping for first names (male names first, then female names)
+const maleNames = ['Aarav', 'Vivaan', 'Aditya', 'Vihaan', 'Arjun', 'Sai', 'Reyansh', 'Ayaan', 'Krishna', 'Ishaan'];
+const femaleNames = ['Ananya', 'Diya', 'Saanvi', 'Aadhya', 'Myra', 'Anika', 'Pari', 'Riya', 'Kiara', 'Gauri'];
+
+// Function to determine gender from first name
+const getGenderFromName = (name: string): 'male' | 'female' => {
+  const firstName = name.split(' ')[0];
+  if (femaleNames.includes(firstName)) {
+    return 'female';
+  }
+  // Default to male if not in female list (covers male names and unknown names)
+  return 'male';
+};
+
 // Branch short-code mapping
 const branches = {
   cs: 'CS',   // CSE
@@ -81,7 +95,8 @@ const importData = async () => {
       password: hashedPassword,
       admissionYear,
       branch: 'cs',
-      section: 'a'
+      section: 'a',
+      gender: 'male' // Demo student is male
     });
 
     // Demo Student (ISE-B)
@@ -93,17 +108,18 @@ const importData = async () => {
       password: hashedPassword,
       admissionYear,
       branch: 'ise',
-      section: 'b'
+      section: 'b',
+      gender: 'female' // Demo student is female
     });
 
     // ---------------- 2022 ADMISSION YEAR STUDENTS (CI-A) -----------------
     const admissionYear2022 = 2022;
     const yearYY2022 = String(admissionYear2022).slice(-2);
     const ci2022Students = [
-      { name: 'Aakash Kumar Suman', email: '2022ci_aakashkumarsuman_a@nie.ac.in', usn: `4NI${yearYY2022}CI001` },
-      { name: 'Rishav Gupta', email: '2022ci_rishavgupta_a@nie.ac.in', usn: `4NI${yearYY2022}CI002` },
-      { name: 'Monu Kumar Shekhar', email: '2022ci_monukumarshekhar_a@nie.ac.in', usn: `4NI${yearYY2022}CI003` },
-      { name: 'Adwaitha', email: '2022ci_adwaitha_a@nie.ac.in', usn: `4NI${yearYY2022}CI004` }
+      { name: 'Aakash Kumar Suman', email: '2022ci_aakashkumarsuman_a@nie.ac.in', usn: `4NI${yearYY2022}CI001`, gender: 'male' as const },
+      { name: 'Rishav Gupta', email: '2022ci_rishavgupta_a@nie.ac.in', usn: `4NI${yearYY2022}CI002`, gender: 'male' as const },
+      { name: 'Monu Kumar Shekhar', email: '2022ci_monukumarshekhar_a@nie.ac.in', usn: `4NI${yearYY2022}CI003`, gender: 'male' as const },
+      { name: 'Adwaitha', email: '2022ci_adwaitha_a@nie.ac.in', usn: `4NI${yearYY2022}CI004`, gender: 'female' as const }
     ];
 
     for (const student of ci2022Students) {
@@ -114,7 +130,8 @@ const importData = async () => {
         password: hashedPassword,
         admissionYear: admissionYear2022,
         branch: 'ci',
-        section: 'a'
+        section: 'a',
+        gender: student.gender
       });
       usedEmails.add(student.email);
     }
@@ -171,6 +188,8 @@ const importData = async () => {
             name = 'Saanvi Patel';
           }
 
+          // Determine gender from name
+          const gender = getGenderFromName(name);
 
           let base = `${admissionYear}${branchKey}_${name.replace(/\s+/g, '').toLowerCase()}_${section}`;
           let email = `${base}@nie.ac.in`;
@@ -189,7 +208,8 @@ const importData = async () => {
             password: hashedPassword,
             admissionYear,
             branch: branchKey,
-            section
+            section,
+            gender
           });
 
           studentNum++;

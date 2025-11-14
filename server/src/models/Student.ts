@@ -8,6 +8,7 @@ export interface IStudent extends Document {
   admissionYear: number;
   branch: 'cs' | 'ci' | 'ise';
   section: string;
+  gender?: 'male' | 'female';
   isValidStudent: () => boolean;
 }
 
@@ -19,6 +20,7 @@ const StudentSchema: Schema = new Schema({
   admissionYear: { type: Number, required: true },
   branch: { type: String, enum: ['cs', 'ci', 'ise'], required: true },
   section: { type: String, lowercase: true, required: true },
+  gender: { type: String, enum: ['male', 'female'], required: false },
 }, { timestamps: true });
 
 StudentSchema.methods.isValidStudent = function (): boolean {

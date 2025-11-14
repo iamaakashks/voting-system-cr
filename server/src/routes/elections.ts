@@ -116,11 +116,34 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
           }
         }
 
-        const remappedCandidates = election.candidates.map(c => ({
-            id: c.student.toString(),
-            name: c.name,
-            imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
-        }));
+        // Generate gender-specific profile picture (simple and polite style)
+        const getProfilePicture = async (studentId: string, candidateName: string) => {
+          try {
+            const student = await Student.findById(studentId).select('gender');
+            const gender = student?.gender || 'male'; // Default to male if not set
+            // Create a hash from student ID for consistent avatar seed
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            // Use DiceBear personas style for simple, polite avatars with gender
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+          } catch (error) {
+            // Fallback to default male avatar
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+          }
+        };
+
+        const remappedCandidates = await Promise.all(
+          election.candidates.map(async (c) => {
+            const imageUrl = await getProfilePicture(c.student.toString(), c.name);
+            return {
+              id: c.student.toString(),
+              name: c.name,
+              imageUrl
+            };
+          })
+        );
         const results = election.candidates.reduce((acc, c) => {
             acc[c.student.toString()] = c.votes;
             return acc;
@@ -163,25 +186,50 @@ router.get('/teacher', protect, async (req: AuthRequest, res: Response) => {
       createdBy: req.user.id
     }).sort({ startTime: -1 });
     
-    const electionsWithDetails = elections.map(e => {
-      const remappedCandidates = e.candidates.map(c => ({
-        id: c.student.toString(),
-        name: c.name,
-        imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
-      }));
-      
-      const results = e.candidates.reduce((acc, c) => {
-        acc[c.student.toString()] = c.votes;
-        return acc;
-      }, {} as { [candidateId: string]: number });
-      
-      return {
-        ...e.toObject(),
-        id: e._id,
-        candidates: remappedCandidates,
-        results: results,
-      };
-    });
+        // Generate gender-specific profile picture (simple and polite style)
+        const getProfilePicture = async (studentId: string, candidateName: string) => {
+          try {
+            const student = await Student.findById(studentId).select('gender');
+            const gender = student?.gender || 'male'; // Default to male if not set
+            // Create a hash from student ID for consistent avatar seed
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            // Use DiceBear personas style for simple, polite avatars with gender
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+          } catch (error) {
+            // Fallback to default male avatar
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+          }
+        };
+
+    const electionsWithDetails = await Promise.all(
+      elections.map(async (e) => {
+        const remappedCandidates = await Promise.all(
+          e.candidates.map(async (c) => {
+            const imageUrl = await getProfilePicture(c.student.toString(), c.name);
+            return {
+              id: c.student.toString(),
+              name: c.name,
+              imageUrl
+            };
+          })
+        );
+        
+        const results = e.candidates.reduce((acc, c) => {
+          acc[c.student.toString()] = c.votes;
+          return acc;
+        }, {} as { [candidateId: string]: number });
+        
+        return {
+          ...e.toObject(),
+          id: e._id,
+          candidates: remappedCandidates,
+          results: results,
+        };
+      })
+    );
 
     res.json(electionsWithDetails);
   } catch (err: any) {
@@ -225,11 +273,34 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
       }
     }
     
-    const remappedCandidates = election.candidates.map(c => ({
-        id: c.student.toString(),
-        name: c.name,
-        imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
-    }));
+        // Generate gender-specific profile picture (simple and polite style)
+        const getProfilePicture = async (studentId: string, candidateName: string) => {
+          try {
+            const student = await Student.findById(studentId).select('gender');
+            const gender = student?.gender || 'male'; // Default to male if not set
+            // Create a hash from student ID for consistent avatar seed
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            // Use DiceBear personas style for simple, polite avatars with gender
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+          } catch (error) {
+            // Fallback to default male avatar
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+          }
+        };
+
+    const remappedCandidates = await Promise.all(
+      election.candidates.map(async (c) => {
+        const imageUrl = await getProfilePicture(c.student.toString(), c.name);
+        return {
+          id: c.student.toString(),
+          name: c.name,
+          imageUrl
+        };
+      })
+    );
 
     const results = election.candidates.reduce((acc, c) => {
         acc[c.student.toString()] = c.votes;
@@ -286,11 +357,34 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
     
     const fullElection = await Election.findById(election._id).populate('createdBy', 'name');
     
-    const remappedCandidates = fullElection!.candidates.map(c => ({
-        id: c.student.toString(),
-        name: c.name,
-        imageUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(c.name)}&background=2563eb&color=fff&size=200&bold=true&font-size=0.5`
-    }));
+        // Generate gender-specific profile picture (simple and polite style)
+        const getProfilePicture = async (studentId: string, candidateName: string) => {
+          try {
+            const student = await Student.findById(studentId).select('gender');
+            const gender = student?.gender || 'male'; // Default to male if not set
+            // Create a hash from student ID for consistent avatar seed
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            // Use DiceBear personas style for simple, polite avatars with gender
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+          } catch (error) {
+            // Fallback to default male avatar
+            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+            const seed = `${candidateName}-${hash}`;
+            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+          }
+        };
+
+    const remappedCandidates = await Promise.all(
+      fullElection!.candidates.map(async (c) => {
+        const imageUrl = await getProfilePicture(c.student.toString(), c.name);
+        return {
+          id: c.student.toString(),
+          name: c.name,
+          imageUrl
+        };
+      })
+    );
     const results = fullElection!.candidates.reduce((acc, c) => {
         acc[c.student.toString()] = c.votes;
         return acc;
