@@ -116,21 +116,19 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
           }
         }
 
-        // Generate gender-specific profile picture (simple and polite style)
+        // Generate gender-specific profile picture using avatar placeholder API
         const getProfilePicture = async (studentId: string, candidateName: string) => {
           try {
             const student = await Student.findById(studentId).select('gender');
             const gender = student?.gender || 'male'; // Default to male if not set
-            // Create a hash from student ID for consistent avatar seed
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            // Use DiceBear personas style for simple, polite avatars with gender
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+            // Use avatar placeholder API with gender-specific endpoints
+            const genderPath = gender === 'female' ? 'girl' : 'boy';
+            const username = candidateName.split(' ')[0]; // Use first name as username
+            return `https://avatar.iran.liara.run/public/${genderPath}?username=${encodeURIComponent(username)}`;
           } catch (error) {
             // Fallback to default male avatar
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+            const username = candidateName.split(' ')[0];
+            return `https://avatar.iran.liara.run/public/boy?username=${encodeURIComponent(username)}`;
           }
         };
 
@@ -186,21 +184,19 @@ router.get('/teacher', protect, async (req: AuthRequest, res: Response) => {
       createdBy: req.user.id
     }).sort({ startTime: -1 });
     
-        // Generate gender-specific profile picture (simple and polite style)
+        // Generate gender-specific profile picture using avatar placeholder API
         const getProfilePicture = async (studentId: string, candidateName: string) => {
           try {
             const student = await Student.findById(studentId).select('gender');
             const gender = student?.gender || 'male'; // Default to male if not set
-            // Create a hash from student ID for consistent avatar seed
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            // Use DiceBear personas style for simple, polite avatars with gender
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+            // Use avatar placeholder API with gender-specific endpoints
+            const genderPath = gender === 'female' ? 'girl' : 'boy';
+            const username = candidateName.split(' ')[0]; // Use first name as username
+            return `https://avatar.iran.liara.run/public/${genderPath}?username=${encodeURIComponent(username)}`;
           } catch (error) {
             // Fallback to default male avatar
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+            const username = candidateName.split(' ')[0];
+            return `https://avatar.iran.liara.run/public/boy?username=${encodeURIComponent(username)}`;
           }
         };
 
@@ -273,21 +269,19 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
       }
     }
     
-        // Generate gender-specific profile picture (simple and polite style)
+        // Generate gender-specific profile picture using avatar placeholder API
         const getProfilePicture = async (studentId: string, candidateName: string) => {
           try {
             const student = await Student.findById(studentId).select('gender');
             const gender = student?.gender || 'male'; // Default to male if not set
-            // Create a hash from student ID for consistent avatar seed
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            // Use DiceBear personas style for simple, polite avatars with gender
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+            // Use avatar placeholder API with gender-specific endpoints
+            const genderPath = gender === 'female' ? 'girl' : 'boy';
+            const username = candidateName.split(' ')[0]; // Use first name as username
+            return `https://avatar.iran.liara.run/public/${genderPath}?username=${encodeURIComponent(username)}`;
           } catch (error) {
             // Fallback to default male avatar
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+            const username = candidateName.split(' ')[0];
+            return `https://avatar.iran.liara.run/public/boy?username=${encodeURIComponent(username)}`;
           }
         };
 
@@ -357,21 +351,19 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
     
     const fullElection = await Election.findById(election._id).populate('createdBy', 'name');
     
-        // Generate gender-specific profile picture (simple and polite style)
+        // Generate gender-specific profile picture using avatar placeholder API
         const getProfilePicture = async (studentId: string, candidateName: string) => {
           try {
             const student = await Student.findById(studentId).select('gender');
             const gender = student?.gender || 'male'; // Default to male if not set
-            // Create a hash from student ID for consistent avatar seed
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            // Use DiceBear personas style for simple, polite avatars with gender
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=${gender}`;
+            // Use avatar placeholder API with gender-specific endpoints
+            const genderPath = gender === 'female' ? 'girl' : 'boy';
+            const username = candidateName.split(' ')[0]; // Use first name as username
+            return `https://avatar.iran.liara.run/public/${genderPath}?username=${encodeURIComponent(username)}`;
           } catch (error) {
             // Fallback to default male avatar
-            const hash = studentId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-            const seed = `${candidateName}-${hash}`;
-            return `https://api.dicebear.com/7.x/personas/png?seed=${encodeURIComponent(seed)}&gender=male`;
+            const username = candidateName.split(' ')[0];
+            return `https://avatar.iran.liara.run/public/boy?username=${encodeURIComponent(username)}`;
           }
         };
 
