@@ -106,11 +106,11 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
       </button>
       <div className="w-full max-w-md bg-gray-800 rounded-lg shadow-xl p-8">
         <div className="text-center mb-8">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white mx-auto" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zm13 8a2 2 0 11-4 0 2 2 0 014 0zM16 11a1 1 0 100 2h4a1 1 0 100-2h-4zm-1-4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zM6 12a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" />
-            </svg>
-           <h1 className="text-3xl font-bold text-white mt-4">Student Login</h1>
-           <p className="text-gray-400 mt-2">Login with your college credentials</p>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-white mx-auto" viewBox="0 0 20 20" fill="currentColor">
+            <path d="M10 9a3 3 0 100-6 3 3 0 000 6zM6 8a2 2 0 11-4 0 2 2 0 014 0zm13 8a2 2 0 11-4 0 2 2 0 014 0zM16 11a1 1 0 100 2h4a1 1 0 100-2h-4zm-1-4a1 1 0 011-1h2a1 1 0 110 2h-2a1 1 0 01-1-1zM6 12a1 1 0 011-1h2a1 1 0 110 2H7a1 1 0 01-1-1z" />
+          </svg>
+          <h1 className="text-3xl font-bold text-white mt-4">Student Login</h1>
+          <p className="text-gray-400 mt-2">Login with your college credentials</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -128,12 +128,17 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="2023cs_yourname_a@nie.ac.in"
-                className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-white focus:border-white sm:text-sm bg-gray-700 text-white"
+                className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-white focus:border-white sm:text-sm bg-gray-700 text-white ${
+                  errors.email ? 'border-red-500' : 'border-gray-600'
+                }`}
               />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-400">{errors.email}</p>
+              )}
             </div>
           </div>
-          
-           <div>
+
+          <div>
             <label htmlFor="usn" className="block text-sm font-medium text-gray-300">
               College USN
             </label>
@@ -147,12 +152,17 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
                 value={formData.usn}
                 onChange={(e) => handleInputChange('usn', e.target.value.toUpperCase())}
                 placeholder="4NI23CS001"
-                className="appearance-none block w-full px-3 py-2 border border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-white focus:border-white sm:text-sm bg-gray-700 text-white"
+                className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-white focus:border-white sm:text-sm bg-gray-700 text-white ${
+                  errors.usn ? 'border-red-500' : 'border-gray-600'
+                }`}
               />
+              {errors.usn && (
+                <p className="mt-1 text-sm text-red-400">{errors.usn}</p>
+              )}
             </div>
           </div>
-          
-           <div>
+
+          <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-300">
               Password
             </label>
@@ -166,9 +176,11 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
                 value={formData.password}
                 onChange={(e) => handleInputChange('password', e.target.value)}
                 placeholder="••••••••"
-                className="appearance-none block w-full px-3 py-2 pr-10 border border-gray-600 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-white focus:border-white sm:text-sm bg-gray-700 text-white"
+                className={`appearance-none block w-full px-3 py-2 pr-10 border rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-white focus:border-white sm:text-sm bg-gray-700 text-white ${
+                  errors.password ? 'border-red-500' : 'border-gray-600'
+                }`}
               />
-              {password.length > 0 && (
+              {formData.password.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
@@ -187,37 +199,87 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
                 </button>
               )}
             </div>
+            {formData.password && (
+              <div className="mt-2">
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 bg-gray-700 rounded-full h-2">
+                    <div
+                      className="h-2 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${(passwordStrength.score / 4) * 100}%`,
+                        backgroundColor: passwordStrength.color,
+                      }}
+                    />
+                  </div>
+                  <span className="text-xs text-gray-400">{passwordStrength.label}</span>
+                </div>
+              </div>
+            )}
+            {errors.password && (
+              <p className="mt-1 text-sm text-red-400">{errors.password}</p>
+            )}
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="rememberMe"
+              name="rememberMe"
+              type="checkbox"
+              checked={formData.rememberMe}
+              onChange={(e) => handleInputChange('rememberMe', e.target.checked)}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+            />
+            <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-300">
+              Remember me for 7 days
+            </label>
           </div>
 
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white"
+              disabled={isLoading}
+              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-black bg-white hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-800 focus:ring-white disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Login as Student
+              {isLoading ? (
+                <div className="flex items-center">
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-black" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Signing in...
+                </div>
+              ) : (
+                'Login as Student'
+              )}
             </button>
           </div>
         </form>
-        
+
         <div className="mt-6">
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-600" />
-                </div>
-                <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-gray-800 text-gray-400">
-                        Quick login for demo (pass: password123)
-                    </span>
-                </div>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-600" />
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-3">
-                <button onClick={() => handleQuickLogin('2023cs_demostudentcs_a@nie.ac.in', '4NI23CS001', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
-                    Student (CS-A)
-                </button>
-                 <button onClick={() => handleQuickLogin('2023ise_demostudentise_b@nie.ac.in', '4NI23IS001', 'password123')} className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600">
-                    Student (ISE-B)
-                </button>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-gray-800 text-gray-400">
+                Quick login for demo (pass: password123)
+              </span>
             </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <button
+              onClick={() => handleQuickLogin('2023cs_demostudentcs_a@nie.ac.in', '4NI23CS001', 'password123')}
+              className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600"
+            >
+              Student (CS-A)
+            </button>
+            <button
+              onClick={() => handleQuickLogin('2023ise_demostudentise_b@nie.ac.in', '4NI23IS001', 'password123')}
+              className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600"
+            >
+              Student (ISE-B)
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -225,6 +287,3 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
 };
 
 export default StudentLogin;
-
-
-

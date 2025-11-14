@@ -4,7 +4,7 @@ import ElectionList from './ElectionList';
 import ElectionDetail from './ElectionDetail';
 import Notification from './Notification';
 import Spinner from './Spinner';
-import StudentLogin from './StudentLogin';
+import StudentLogin from './StudentLoginNew';
 import TeacherLogin from './TeacherLogin';
 import TeacherDashboard from './TeacherDashboard';
 import TransactionFeed from './TransactionFeed';

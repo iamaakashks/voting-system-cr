@@ -183,15 +183,7 @@ const ElectionList: React.FC<ElectionListProps> = ({ elections, onSelectElection
   if (elections.length === 0) {
       return (
           <div>
-            {onBack && (
-              <button onClick={onBack} className="mb-4 text-white font-semibold hover:text-gray-300 transition-colors flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
-                Back
-              </button>
-            )}
-            <div className="text-center py-16">
+                        <div className="text-center py-16">
               <h2 className="text-3xl font-bold text-white">No Elections Found</h2>
               <p className="text-lg text-gray-400 mt-4">
                   {userRole === 'student' 
@@ -205,15 +197,7 @@ const ElectionList: React.FC<ElectionListProps> = ({ elections, onSelectElection
 
   return (
     <div>
-      {onBack && (
-        <button onClick={onBack} className="mb-4 text-white font-semibold hover:text-gray-300 transition-colors flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          Back
-        </button>
-      )}
-      <h2 className="text-4xl font-extrabold text-center mb-2 text-white">{title}</h2>
+            <h2 className="text-4xl font-extrabold text-center mb-2 text-white">{title}</h2>
       <p className="text-lg text-gray-400 text-center mb-12 max-w-2xl mx-auto">{subtitle}</p>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {elections.map(election => (
