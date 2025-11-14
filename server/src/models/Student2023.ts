@@ -1,6 +1,6 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
-export interface IStudent extends Document {
+export interface IStudent2023 extends Document {
   usn: string;
   name: string;
   email: string;
@@ -12,7 +12,7 @@ export interface IStudent extends Document {
   isValidStudent: () => boolean;
 }
 
-const StudentSchema: Schema = new Schema({
+const Student2023Schema: Schema = new Schema({
   usn: { type: String, required: true, unique: true, uppercase: true },
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true, lowercase: true },
@@ -21,11 +21,12 @@ const StudentSchema: Schema = new Schema({
   branch: { type: String, enum: ['cs', 'ci', 'is'], required: true },
   section: { type: String, lowercase: true, required: true },
   gender: { type: String, enum: ['male', 'female'], required: false },
-}, { timestamps: true });
+}, { timestamps: true, collection: 'students_2023' });
 
-StudentSchema.methods.isValidStudent = function (): boolean {
+Student2023Schema.methods.isValidStudent = function (): boolean {
   const currentYear = new Date().getFullYear();
   return currentYear - this.admissionYear < 4;
 };
 
-export default mongoose.model<IStudent>('Student', StudentSchema);
+export default mongoose.model<IStudent2023>('Student2023', Student2023Schema);
+

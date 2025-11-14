@@ -2,7 +2,7 @@ import express, { Response } from 'express';
 import { protect, AuthRequest } from '../middleware/auth';
 import Election from '../models/Election';
 import Ticket from '../models/Ticket';
-import Student from '../models/Student';
+import { findStudentModelById } from '../utils/getStudentModel';
 import { sendVotingTicket } from '../utils/emailService';
 
 const router = express.Router();
@@ -20,10 +20,11 @@ router.post('/request', protect, async (req: AuthRequest, res: Response) => {
 
   try {
     // Get student info
-    const student = await Student.findById(studentId);
-    if (!student) {
+    const result = await findStudentModelById(studentId);
+    if (!result) {
       return res.status(404).json({ message: 'Student not found' });
     }
+    const student = result.student;
 
     // Get election
     const election = await Election.findById(electionId);

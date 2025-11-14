@@ -16,6 +16,7 @@ export interface IElection extends Document {
     usn: string; // Denormalized
     votes: number;
   }[];
+  notaVotes?: number; // Track NOTA (None of the Above) votes
 }
 
 const ElectionSchema: Schema = new Schema({
@@ -31,7 +32,8 @@ const ElectionSchema: Schema = new Schema({
     name: { type: String, required: true },
     usn: { type: String, required: true },
     votes: { type: Number, default: 0 }
-  }]
+  }],
+  notaVotes: { type: Number, default: 0 }
 }, { 
   timestamps: true,
   // Ensure virtuals are included when converting to JSON

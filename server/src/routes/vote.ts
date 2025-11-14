@@ -3,7 +3,7 @@ import { protect, AuthRequest } from '../middleware/auth';
 import Election from '../models/Election';
 import Ticket from '../models/Ticket';
 import Transaction from '../models/Transaction';
-import Student from '../models/Student';
+import { findStudentModelById } from '../utils/getStudentModel';
 import crypto from 'crypto';
 
 const router = express.Router();
@@ -21,10 +21,11 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
 
   try {
     // Get student info
-    const student = await Student.findById(studentId);
-    if (!student) {
+    const result = await findStudentModelById(studentId);
+    if (!result) {
       return res.status(404).json({ message: 'Student not found' });
     }
+    const student = result.student;
 
     // Validate email matches logged-in student
     if (email && email.toLowerCase() !== student.email.toLowerCase()) {
@@ -64,11 +65,18 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     
     const mockTxHash = '0x' + crypto.randomBytes(32).toString('hex');
     
-    // Update vote count
-    await Election.updateOne(
+    // Update vote count - handle NOTA votes separately
+    if (candidateId === 'NOTA') {
+      await Election.updateOne(
+        { _id: electionId },
+        { $inc: { notaVotes: 1 } }
+      );
+    } else {
+      await Election.updateOne(
         { _id: electionId, "candidates.student": candidateId },
         { $inc: { "candidates.$.votes": 1 } }
-    );
+      );
+    }
     
     await userTicket.save();
     
@@ -77,6 +85,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       txHash: mockTxHash,
       election: electionId,
       student: studentId,
+      candidateId: candidateId, // Store which candidate was voted for
       timestamp: new Date()
     });
 

@@ -1,9 +1,9 @@
 import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import Student, { IStudent } from '../models/Student';
 import Teacher, { ITeacher } from '../models/Teacher';
 import { protect, AuthRequest } from '../middleware/auth';
+import { findStudentByEmailAndUSN, findStudentModelById, getStudentModel } from '../utils/getStudentModel';
 
 const router = express.Router();
 
@@ -22,13 +22,19 @@ router.post('/register-student', async (req: Request, res: Response) => {
   try {
     const { usn, name, email, password, admissionYear, branch, section } = req.body;
     
-    let student = await Student.findOne({ email });
+    if (!admissionYear || ![2022, 2023, 2024, 2025].includes(admissionYear)) {
+      return res.status(400).json({ message: 'Invalid admission year. Must be 2022, 2023, 2024, or 2025.' });
+    }
+
+    const StudentModel = getStudentModel(admissionYear);
+    
+    let student = await StudentModel.findOne({ email });
     if (student) return res.status(400).json({ message: 'Student already exists' });
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newStudent = new Student({
+    const newStudent = new StudentModel({
       usn, name, email, password: hashedPassword, admissionYear, branch, section
     });
     
@@ -68,13 +74,16 @@ router.post('/login', async (req: Request, res: Response) => {
   const { email, usn, password } = req.body;
 
   try {
-    let user: IStudent | ITeacher | null = null;
+    let user: any | null = null;
     let role: 'student' | 'teacher' | null = null;
     
     // Student login (requires email AND usn)
     if (usn && usn !== 'N/A') {
-      user = await Student.findOne({ email: email.toLowerCase(), usn: usn.toUpperCase() });
-      role = 'student';
+      const result = await findStudentByEmailAndUSN(email, usn);
+      if (result) {
+        user = result.student;
+        role = 'student';
+      }
       console.log('Attempting to log in user as a student.');
     } 
     // Teacher login (email only, USN is 'N/A' from form)
@@ -92,11 +101,17 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 
     // Now, if it's a student, check their validity
-    if (role === 'student' && !(user as IStudent).isValidStudent()) {
+    if (role === 'student' && user.isValidStudent && !user.isValidStudent()) {
         console.error('Student account is no longer valid.');
         return res.status(403).json({ message: 'This student account is no longer valid.' });
     }
     // --- End of Fix 1 ---
+
+    // Ensure role is not null before proceeding
+    if (!role) {
+      console.error('Role is null, cannot generate token.');
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
 
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -137,7 +152,15 @@ router.get('/me', protect, async (req: AuthRequest, res: Response) => {
 
     let user: any;
     if (req.user.role === 'student') {
-      user = await Student.findById(req.user.id).select('-password');
+      const result = await findStudentModelById(req.user.id);
+      if (!result) {
+        return res.status(404).json({ message: 'Student not found' });
+      }
+      user = result.student;
+      // Remove password from user object
+      const userObj = user.toObject();
+      delete userObj.password;
+      user = userObj;
     } else {
       user = await Teacher.findById(req.user.id).select('-password');
     }

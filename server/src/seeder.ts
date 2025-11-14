@@ -1,329 +1,273 @@
-import 'dotenv/config';
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
-import connectDB from './db';
-import Student from './models/Student';
-import Teacher from './models/Teacher';
-import Ticket from './models/Ticket';
-import Election from './models/Election';
+import "dotenv/config";
+import bcrypt from "bcryptjs";
+import connectDB from "./db";
+import Student2022 from "./models/Student2022";
+import Student2023 from "./models/Student2023";
+import Student2024 from "./models/Student2024";
+import Student2025 from "./models/Student2025";
+import Teacher from "./models/Teacher";
+import Ticket from "./models/Ticket";
+import Election from "./models/Election";
+import { getStudentModel } from "./utils/getStudentModel";
 
-// --- Data for Generation ---
-const firstNames = [
-  'Aarav', 'Vivaan', 'Aditya', 'Vihaan', 'Arjun', 'Sai', 'Reyansh', 'Ayaan', 'Krishna', 'Ishaan',
-  'Ananya', 'Diya', 'Saanvi', 'Aadhya', 'Myra', 'Anika', 'Pari', 'Riya', 'Kiara', 'Gauri'
+// -----------------------------------------------------------------------------
+// FIRST NAME POOLS (50 MALE + 50 FEMALE)
+// -----------------------------------------------------------------------------
+const maleNames = [
+  "Aarav","Vivaan","Aditya","Arjun","Vihaan","Krishna","Ishaan","Reyansh","Ayaan","Kabir",
+  "Dhruv","Rudra","Atharv","Yuvraj","Rohan","Ritvik","Nishant","Harsh","Pranav","Sahil",
+  "Manish","Ujjwal","Varun","Abhinav","Samar","Tanay","Amit","Jay","Kunal","Raghav",
+  "Dev","Ayush","Rakesh","Sujal","Tejas","Naman","Shaurya","Rajat","Sameer","Irfan",
+  "Farhan","Prem","Siddharth","Chirag","Omkar","Girish","Sanjay","Ravi","Rakesh","Kartik"
 ];
+
+const femaleNames = [
+  "Ananya","Aadhya","Diya","Myra","Aanya","Saanvi","Riya","Kiara","Gauri","Anika",
+  "Pari","Meera","Isha","Suhani","Aarohi","Tanvi","Nandini","Rashmi","Pragya","Muskan",
+  "Sneha","Rupal","Kavya","Bhavya","Vidhi","Harini","Swara","Lavanya","Anjali","Sita",
+  "Pooja","Neha","Komal","Prachi","Radhika","Srishti","Drishti","Juhi","Vrinda","Mahima",
+  "Simran","Tanya","Janvi","Chaitra","Kriti","Nisha","Apoorva","Sandhya","Shreya","Mitali"
+];
+
+// -----------------------------------------------------------------------------
+// LAST NAME POOL (60)
+// -----------------------------------------------------------------------------
 const lastNames = [
-  'Patel', 'Sharma', 'Singh', 'Gupta', 'Kumar', 'Verma', 'Jain', 'Khan', 'Yadav', 'Reddy'
+  "Patel","Sharma","Singh","Gupta","Kumar","Yadav","Reddy","Rao","Shetty","Gowda",
+  "Naidu","Nair","Das","Iyer","Menon","Agarwal","Jha","Mishra","Tiwari","Pandey",
+  "Joshi","Kulkarni","Desai","Bhat","Bhatia","Kapoor","Chopra","Mehta","Saxena","Verma",
+  "Choudhary","Srinivas","Pawar","Gopal","Rastogi","Tripathi","Chatterjee",
+  "Mukherjee","Bandyopadhyay","Banerjee","Dutta","Paul","Saha","Sarkar","Khatri",
+  "Rajput","Solanki","Gohil","Bhatt","Rawat","Negi","Kohli","Gill","Ahluwalia",
+  "Sandhu","Malhotra","Arora","Talwar","Sehgal"
 ];
 
-// Gender mapping for first names (male names first, then female names)
-const maleNames = ['Aarav', 'Vivaan', 'Aditya', 'Vihaan', 'Arjun', 'Sai', 'Reyansh', 'Ayaan', 'Krishna', 'Ishaan'];
-const femaleNames = ['Ananya', 'Diya', 'Saanvi', 'Aadhya', 'Myra', 'Anika', 'Pari', 'Riya', 'Kiara', 'Gauri'];
+// -----------------------------------------------------------------------------
+// HELPERS
+// -----------------------------------------------------------------------------
+const getGenderFromName = (name: string): "male" | "female" =>
+  maleNames.includes(name) ? "male" : "female";
 
-// Function to determine gender from first name
-const getGenderFromName = (name: string): 'male' | 'female' => {
-  const firstName = name.split(' ')[0];
-  if (femaleNames.includes(firstName)) {
-    return 'female';
-  }
-  // Default to male if not in female list (covers male names and unknown names)
-  return 'male';
-};
+const branches = { cs: "CS", ci: "CI", is: "IS" };
+const sections = ["a", "b", "c", "d"];
 
-// Branch short-code mapping
-const branches = {
-  cs: 'CS',   // CSE
-  ci: 'CI',   // CSE (AI&ML)
-  ise: 'IS'   // Information Science
-};
+const rand = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
 
-const sections = ['a', 'b', 'c', 'd'];
-const admissionYear = 2023;
+const makeUSN = (year: number, branchCode: string, rollNumber: number) =>
+  `4NI${String(year).slice(-2)}${branchCode}${String(rollNumber).padStart(3, "0")}`;
 
-const getRandom = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)];
-
-const makeEmail = (year: number, branch: string, name: string, section: string) =>
-  `${year}${branch}_${name.replace(/\s+/g, '').toLowerCase()}_${section}@nie.ac.in`;
-
-const makeUSN = (year: number, branchCode: string, num: number) =>
-  `4NI${String(year).slice(-2)}${branchCode}${String(num).padStart(3, '0')}`;
-
-// --- Destroy Database Function ---
+// -----------------------------------------------------------------------------
+// DESTROY DATA
+// -----------------------------------------------------------------------------
 const destroyData = async () => {
-  try {
-    await connectDB();
-    await Student.deleteMany();
-    await Teacher.deleteMany();
-    await Ticket.deleteMany();
-    await Election.deleteMany();
-    console.log('🛑 Data Destroyed Successfully!');
-    process.exit();
-  } catch (error) {
-    console.error(`Error destroying data: ${error}`);
-    process.exit(1);
-  }
+  await connectDB();
+  await Student2022.deleteMany();
+  await Student2023.deleteMany();
+  await Student2024.deleteMany();
+  await Student2025.deleteMany();
+  await Teacher.deleteMany();
+  await Ticket.deleteMany();
+  await Election.deleteMany();
+  console.log("🛑 All data destroyed!");
+  process.exit();
 };
 
-// --- Import Data Function ---
+// -----------------------------------------------------------------------------
+// IMPORT DATA
+// -----------------------------------------------------------------------------
 const importData = async () => {
   try {
     await connectDB();
 
-    await Student.deleteMany();
+    await Student2022.deleteMany();
+    await Student2023.deleteMany();
+    await Student2024.deleteMany();
+    await Student2025.deleteMany();
     await Teacher.deleteMany();
     await Ticket.deleteMany();
     await Election.deleteMany();
 
-    console.log('Cleared existing data...');
+    console.log("🧹 Old data cleared...");
 
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('password123', salt);
+    const hashedPassword = await bcrypt.hash("password123", salt);
 
-    const studentsToCreate = [];
-    const teachersToCreate = [];
+    const studentsToCreate: any[] = [];
+    const teachersToCreate: any[] = [];
     const usedEmails = new Set<string>();
 
-    // ---------------- DEMO USERS -----------------
-    const yearYY = String(admissionYear).slice(-2);
-
-    // Demo Student (CS-A)
-    const demoName1 = 'Demo Student CS';
-    studentsToCreate.push({
-      usn: `4NI${yearYY}CS001`,
-      name: demoName1,
-      email: `${admissionYear}cs_${demoName1.replace(/\s+/g, '').toLowerCase()}_a@nie.ac.in`,
-      password: hashedPassword,
-      admissionYear,
-      branch: 'cs',
-      section: 'a',
-      gender: 'male' // Demo student is male
-    });
-
-    // Demo Student (ISE-B)
-    const demoName2 = 'Demo Student ISE';
-    studentsToCreate.push({
-      usn: `4NI${yearYY}IS001`,
-      name: demoName2,
-      email: `${admissionYear}ise_${demoName2.replace(/\s+/g, '').toLowerCase()}_b@nie.ac.in`,
-      password: hashedPassword,
-      admissionYear,
-      branch: 'ise',
-      section: 'b',
-      gender: 'female' // Demo student is female
-    });
-
-    // ---------------- 2022 ADMISSION YEAR STUDENTS (CI-A) -----------------
-    const admissionYear2022 = 2022;
-    const yearYY2022 = String(admissionYear2022).slice(-2);
-    const ci2022Students = [
-      { name: 'Aakash Kumar Suman', email: '2022ci_aakashkumarsuman_a@nie.ac.in', usn: `4NI${yearYY2022}CI001`, gender: 'male' as const },
-      { name: 'Rishav Gupta', email: '2022ci_rishavgupta_a@nie.ac.in', usn: `4NI${yearYY2022}CI002`, gender: 'male' as const },
-      { name: 'Monu Kumar Shekhar', email: '2022ci_monukumarshekhar_a@nie.ac.in', usn: `4NI${yearYY2022}CI003`, gender: 'male' as const },
-      { name: 'Adwaitha', email: '2022ci_adwaitha_a@nie.ac.in', usn: `4NI${yearYY2022}CI004`, gender: 'female' as const }
-    ];
-
-    for (const student of ci2022Students) {
-      studentsToCreate.push({
-        usn: student.usn,
-        name: student.name,
-        email: student.email,
-        password: hashedPassword,
-        admissionYear: admissionYear2022,
-        branch: 'ci',
-        section: 'a',
-        gender: student.gender
-      });
-      usedEmails.add(student.email);
-    }
-
-    // Demo Teacher CS
+    // ---------------- DEMO TEACHERS -----------------
     teachersToCreate.push({
-      teacherId: 'NI20CS001',
-      name: 'Dr. Demo (CS)',
-      email: 'teacher_cs@nie.ac.in',
+      teacherId: "NI20CS001",
+      name: "Dr. Demo (CS)",
+      email: "teacher_cs@nie.ac.in",
       password: hashedPassword,
-      branch: 'cs'
+      branch: "cs",
     });
 
-    // Demo Teacher AI/ML
     teachersToCreate.push({
-      teacherId: 'NI20CI001',
-      name: 'Dr. Demo (AI&ML)',
-      email: 'teacher_ci@nie.ac.in',
+      teacherId: "NI20CI001",
+      name: "Dr. Demo (AI&ML)",
+      email: "teacher_ci@nie.ac.in",
       password: hashedPassword,
-      branch: 'ci'
+      branch: "ci",
     });
-
-    console.log('Prepared demo users...');
 
     // ---------------- RANDOM TEACHERS -----------------
     for (let i = 1; i <= 20; i++) {
-      const name = `Prof. ${getRandom(firstNames)} ${getRandom(lastNames)}`;
-      const branchKey = (Object.keys(branches) as (keyof typeof branches)[])[i % 3];
+      const fullName = `Prof. ${rand([...maleNames, ...femaleNames])} ${rand(lastNames)}`;
+      const branchKey = ["cs", "ci", "is"][i % 3] as "cs" | "ci" | "is";
       const branchCode = branches[branchKey];
-      const joiningYear = 2018 + (i % 5);
+      const joinYear = 2018 + (i % 5);
 
       teachersToCreate.push({
-        teacherId: `NI${String(joiningYear).slice(-2)}${branchCode}${String(i).padStart(3, '0')}`,
-        name,
-        email: `${name.replace(/\s+/g, '').toLowerCase()}_${branchKey}${i}@nie.ac.in`,
+        teacherId: `NI${String(joinYear).slice(-2)}${branchCode}${String(i).padStart(3, "0")}`,
+        name: fullName,
+        email: fullName.replace(/\s+/g, "").toLowerCase() + `_${branchKey}${i}@nie.ac.in`,
         password: hashedPassword,
-        branch: branchKey
+        branch: branchKey,
       });
     }
 
-    // ---------------- RANDOM STUDENTS -----------------
-    let studentNum = 2; // Start at 2 because 001 is demo
+    // -------------------------------------------------------------------------
+    // FOUR BATCHES × 3 BRANCHES × 4 SECTIONS × 40 STUDENTS = 1920 STUDENTS
+    // -------------------------------------------------------------------------
+    const admissionYears = [2022, 2023, 2024, 2025];
 
-    for (const branchKey of Object.keys(branches) as (keyof typeof branches)[]) {
-      const branchCode = branches[branchKey];
+    for (const year of admissionYears) {
+      // Each branch has its own independent roll number sequence starting at 001
+      const branchRollCounters: { [key: string]: number } = {
+        cs: 1,
+        ci: 1,
+        is: 1
+      };
 
-      for (const section of sections) {
-        for (let i = 1; i <= 20; i++) {
+      for (const branchKey of Object.keys(branches) as ("cs" | "ci" | "is")[]) {
+        const branchCode = branches[branchKey];
 
-          let name = `${getRandom(firstNames)} ${getRandom(lastNames)}`;
-          const usn = makeUSN(admissionYear, branchCode, studentNum);
+        for (const section of sections) {
+          for (let i = 0; i < 40; i++) {
+            const firstName = rand([...maleNames, ...femaleNames]);
+            const lastName = rand(lastNames);
 
-          if (usn === '4NI23CS043') {
-            name = 'Saanvi Patel';
+            const gender = getGenderFromName(firstName);
+            const fullName = `${firstName} ${lastName}`;
+
+            // Use branch-specific roll counter (starts at 001 for each branch)
+            const rollNumber = branchRollCounters[branchKey];
+            const usn = makeUSN(year, branchCode, rollNumber);
+            branchRollCounters[branchKey]++;
+
+            let emailBase = `${year}${branchKey}_${fullName.replace(/\s+/g, "").toLowerCase()}_${section}`;
+            let email = `${emailBase}@nie.ac.in`;
+            let suffix = 1;
+
+            while (usedEmails.has(email)) {
+              email = `${emailBase}${suffix}@nie.ac.in`;
+              suffix++;
+            }
+
+            usedEmails.add(email);
+
+            studentsToCreate.push({
+              usn,
+              name: fullName,
+              email,
+              password: hashedPassword,
+              admissionYear: year,
+              branch: branchKey,
+              section,
+              gender,
+            });
           }
-
-          // Determine gender from name
-          const gender = getGenderFromName(name);
-
-          let base = `${admissionYear}${branchKey}_${name.replace(/\s+/g, '').toLowerCase()}_${section}`;
-          let email = `${base}@nie.ac.in`;
-          let count = 1;
-
-          while (usedEmails.has(email)) {
-            email = `${base}${count}@nie.ac.in`;
-            count++;
-          }
-          usedEmails.add(email);
-
-          studentsToCreate.push({
-            usn,
-            name,
-            email,
-            password: hashedPassword,
-            admissionYear,
-            branch: branchKey,
-            section,
-            gender
-          });
-
-          studentNum++;
         }
       }
     }
 
-    console.log(`Generating ${teachersToCreate.length} teachers...`);
-    console.log(`Generating ${studentsToCreate.length} students...`);
+    console.log(`🎓 Students prepared: ${studentsToCreate.length}`);
+    console.log(`👨‍🏫 Teachers prepared: ${teachersToCreate.length}`);
 
-    // Insert into DB
     const insertedTeachers = await Teacher.insertMany(teachersToCreate);
-    const insertedStudents = await Student.insertMany(studentsToCreate);
+    
+    // Insert students into their respective batch collections
+    const studentsByYear: { [year: number]: any[] } = {
+      2022: [],
+      2023: [],
+      2024: [],
+      2025: []
+    };
+    
+    studentsToCreate.forEach(student => {
+      studentsByYear[student.admissionYear].push(student);
+    });
+    
+    const insertedStudents: any[] = [];
+    for (const [yearStr, students] of Object.entries(studentsByYear)) {
+      const year = Number(yearStr);
+      const StudentModel = getStudentModel(year);
+      const inserted = await StudentModel.insertMany(students);
+      insertedStudents.push(...inserted);
+      console.log(`✅ Inserted ${inserted.length} students for year ${year}`);
+    }
 
-    console.log('Generating elections...');
-    await createElections(insertedTeachers, insertedStudents);
+    console.log("📊 Creating sample elections...");
 
-    console.log('✅ Data Imported Successfully!');
+    await createSampleElections(insertedTeachers, insertedStudents);
+
+    console.log("✅ Database seeded successfully!");
     process.exit();
-
-  } catch (error) {
-    console.error(`Error importing data: ${error}`);
+  } catch (err) {
+    console.error(err);
     process.exit(1);
   }
 };
 
-// --- Create Elections Function ---
-const createElections = async (teachers: any[], students: any[]) => {
+// -----------------------------------------------------------------------------
+// SAMPLE ELECTION CREATOR
+// -----------------------------------------------------------------------------
+const createSampleElections = async (teachers: any[], students: any[]) => {
   const now = new Date();
   const oneHour = 1000 * 60 * 60;
-  const oneDay = oneHour * 24;
 
-  const sampleElections = [
-    {
-      title: 'CR Election for CS-A',
-      description: 'Class Representative election for Computer Science, Section A.',
-      branch: 'cs',
-      section: 'a',
-      startTime: new Date(now.getTime() - oneHour * 2), // Started 2 hours ago
-      endTime: new Date(now.getTime() + oneHour * 22), // Ends in 22 hours
-      teacherEmail: 'teacher_cs@nie.ac.in',
-      candidateUSNs: ['4NI23CS002', '4NI23CS003', '4NI23CS004'] // Arjun Patel and some others
-    },
-    {
-      title: 'CR Election for ISE-B',
-      description: 'Class Representative election for Information Science, Section B.',
-      branch: 'ise',
-      section: 'b',
-      startTime: new Date(now.getTime() - oneDay), // Started 1 day ago
-      endTime: new Date(now.getTime() + oneDay * 2), // Ends in 2 days
-      teacherEmail: 'teacher_cs@nie.ac.in', // Can be any teacher
-      candidateUSNs: ['4NI23IS001', '4NI23IS002', '4NI23IS003']
-    },
-    {
-      title: 'Upcoming CR Election for CS-B',
-      description: 'Vote for your Class Representative!',
-      branch: 'cs',
-      section: 'b',
-      startTime: new Date(now.getTime() + oneDay), // Starts tomorrow
-      endTime: new Date(now.getTime() + oneDay * 3), // Ends in 3 days
-      teacherEmail: 'teacher_cs@nie.ac.in',
-      candidateUSNs: ['4NI23CS022', '4NI23CS023']
-    },
-    {
-      title: 'Past CR Election for CI-C',
-      description: 'Results are in for the CI-C CR election.',
-      branch: 'ci',
-      section: 'c',
-      startTime: new Date(now.getTime() - oneDay * 5), // Started 5 days ago
-      endTime: new Date(now.getTime() - oneDay * 3), // Ended 3 days ago
-      teacherEmail: 'teacher_ci@nie.ac.in',
-      candidateUSNs: ['4NI23CI042', '4NI23CI043']
-    }
+  const samples = [
+    { branch: "cs", section: "a", year: 2025 },
+    { branch: "ci", section: "b", year: 2024 },
+    { branch: "is", section: "c", year: 2023 },
   ];
 
-  for (const electionData of sampleElections) {
-    const teacher = teachers.find(t => t.email === electionData.teacherEmail);
-    if (!teacher) {
-      console.warn(`Teacher with email ${electionData.teacherEmail} not found for election ${electionData.title}`);
-      continue;
-    }
+  for (const e of samples) {
+    const teacher = teachers.find((t: any) => t.branch === e.branch);
+    if (!teacher) continue;
 
-    const candidates = electionData.candidateUSNs.map(usn => {
-      const student = students.find(s => s.usn === usn);
-      if (!student) {
-        console.warn(`Candidate student with USN ${usn} not found for election ${electionData.title}`);
-        return null;
-      }
-      return { student: student._id, name: student.name, usn: student.usn, votes: Math.floor(Math.random() * 100) };
-    }).filter(Boolean);
+    // Filter students by branch, section, AND admission year
+    const eligibleStudents = students.filter(
+      (s: any) => s.branch === e.branch && s.section === e.section && s.admissionYear === e.year
+    );
 
-    if (candidates.length === 0) {
-      console.warn(`No valid candidates for election ${electionData.title}, skipping.`);
-      continue;
-    }
+    const candidates = eligibleStudents.slice(0, 3).map((s: any) => ({
+      student: s._id,
+      name: s.name,
+      usn: s.usn,
+      votes: Math.floor(Math.random() * 50),
+    }));
 
-    const newElection = new Election({
-      title: electionData.title,
-      description: electionData.description,
-      branch: electionData.branch,
-      section: electionData.section,
-      startTime: electionData.startTime,
-      endTime: electionData.endTime,
+    if (candidates.length < 1) continue;
+
+    await Election.create({
+      title: `CR Election ${e.year} - ${e.branch.toUpperCase()}-${e.section.toUpperCase()}`,
+      description: "Auto-generated seed election",
+      branch: e.branch,
+      section: e.section,
       createdBy: teacher._id,
-      candidates: candidates
+      startTime: new Date(now.getTime() - oneHour),
+      endTime: new Date(now.getTime() + oneHour * 8),
+      candidates,
     });
-    await newElection.save();
-
-    // Tickets are now generated on-demand when students request to vote
-    // They are sent via email with 5-minute expiration
-    console.log(`Created election: ${newElection.title}. Tickets will be generated on-demand when students vote.`);
   }
 };
 
-// Run destroy/import depending on flag
-if (process.argv[2] === '-d') destroyData();
+// -----------------------------------------------------------------------------
+// RUN MODE
+// -----------------------------------------------------------------------------
+if (process.argv[2] === "-d") destroyData();
 else importData();
