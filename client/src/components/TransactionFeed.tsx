@@ -23,7 +23,7 @@ const TransactionFeed: React.FC<{ transactions: Transaction[] }> = ({ transactio
         <div className="bg-gray-800/50 border border-gray-700 rounded-lg shadow-lg h-full sticky top-24">
             <div className="p-4 border-b border-gray-700">
                 <h3 className="font-bold text-lg text-white flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-green-400 animate-pulse" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-white animate-pulse" viewBox="0 0 20 20" fill="currentColor">
                         <circle cx="10" cy="10" r="10" />
                     </svg>
                     Live Vote Feed
@@ -36,13 +36,13 @@ const TransactionFeed: React.FC<{ transactions: Transaction[] }> = ({ transactio
                 ) : (
                     transactions.map((tx) => (
                         <div key={tx.txHash} className="bg-gray-900/50 p-3 rounded-md border border-gray-700/50">
-                             <p className="text-sm font-semibold text-blue-300 truncate">{tx.electionTitle}</p>
+                             <p className="text-sm font-semibold text-white truncate">{tx.electionTitle}</p>
                              <p className="text-xs text-gray-400 mt-1">{timeSince(new Date(tx.timestamp))}</p>
                              <a 
                                 href={`https://sepolia.etherscan.io/tx/${tx.txHash}`} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="text-xs text-green-400 hover:text-green-300 mt-2 block truncate font-mono"
+                                className="text-xs text-gray-400 hover:text-white mt-2 block truncate font-mono"
                              >
                                 Tx: {tx.txHash.substring(0, 12)}...{tx.txHash.substring(tx.txHash.length - 10)}
                             </a>

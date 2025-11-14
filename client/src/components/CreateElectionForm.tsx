@@ -80,6 +80,12 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
 
   return (
     <div className="max-w-2xl mx-auto bg-gray-800 p-8 rounded-lg shadow-xl">
+      <button onClick={onCancel} className="mb-4 text-white font-semibold hover:text-gray-300 transition-colors flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+        </svg>
+        Back
+      </button>
       <h2 className="text-3xl font-bold text-center text-white mb-6">Create New Election</h2>
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Title */}
@@ -145,7 +151,7 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
                 backgroundColor: state.isFocused ? '#4B5563' : '#374151',
                 color: 'white',
               }),
-              multiValue: (base) => ({ ...base, backgroundColor: '#2563EB' }),
+              multiValue: (base) => ({ ...base, backgroundColor: '#4B5563' }),
               multiValueLabel: (base) => ({ ...base, color: 'white' }),
             }}
           />
@@ -153,8 +159,7 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
 
         {/* Buttons */}
         <div className="flex justify-end gap-4 pt-4">
-          <button type="button" onClick={onCancel} className="px-6 py-2 rounded-md font-semibold bg-gray-600 hover:bg-gray-500 transition-colors">Cancel</button>
-          <button type="submit" className="px-6 py-2 rounded-md font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-colors">Create Election</button>
+          <button type="submit" className="px-6 py-2 rounded-md font-semibold bg-white text-black hover:bg-gray-200 transition-colors">Create Election</button>
         </div>
       </form>
     </div>

@@ -133,3 +133,45 @@ export const postVoteWithEmail = async (electionId: string, candidateId: string,
   const res = await api.post('/vote', { electionId, candidateId, ticket, email });
   return res.data;
 };
+
+export interface TimelineData {
+  time: string;
+  votes: number;
+  timestamp: string;
+}
+
+export interface TurnoutData {
+  totalEligibleVoters: number;
+  totalVotesCast: number;
+  voterTurnoutPercentage: number;
+  remainingVoters: number;
+  timeline: { time: string; votes: number; percentage: number }[];
+}
+
+export interface GenderStats {
+  candidates: {
+    candidateId: string;
+    candidateName: string;
+    maleVotes: number;
+    femaleVotes: number;
+  }[];
+  nota: {
+    maleVotes: number;
+    femaleVotes: number;
+  };
+}
+
+export const getElectionTimeline = async (electionId: string): Promise<TimelineData[]> => {
+  const res = await api.get(`/elections/${electionId}/timeline`);
+  return res.data;
+};
+
+export const getElectionTurnout = async (electionId: string): Promise<TurnoutData> => {
+  const res = await api.get(`/elections/${electionId}/turnout`);
+  return res.data;
+};
+
+export const getElectionGenderStats = async (electionId: string): Promise<GenderStats> => {
+  const res = await api.get(`/elections/${electionId}/gender-stats`);
+  return res.data;
+};

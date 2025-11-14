@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Election, Candidate, User } from '../types';
 import ResultsChart from './ResultsChart';
-import { requestVotingTicket } from '../services/api';
+import VotingTimelineChart from './VotingTimelineChart';
+import VoterTurnoutAnalytics from './VoterTurnoutAnalytics';
+import GenderVoteChart from './GenderVoteChart';
+import { requestVotingTicket, getElectionTimeline, getElectionTurnout, getElectionGenderStats } from '../services/api';
 
 interface ElectionDetailProps {
   election: Election;
@@ -50,7 +53,7 @@ const getButtonState = (election: Election, user: User | null) => {
   if (now > endTime)
     return { text: 'Voting Closed', disabled: true, className: 'bg-red-700 cursor-not-allowed' };
 
-  return { text: 'Cast Vote', disabled: false, className: 'bg-blue-600 hover:bg-blue-700' };
+  return { text: 'Cast Vote', disabled: false, className: 'bg-white text-black hover:bg-gray-200' };
 };
 
 const CandidateCard: React.FC<{
@@ -115,8 +118,8 @@ const VoteModal: React.FC<{
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50" onClick={onClose}>
       <div className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md" onClick={e => e.stopPropagation()}>
         <h3 className="text-2xl font-bold text-white mb-2">Confirm Your Vote</h3>
-        <p className="text-gray-400 mb-4">Voting for <span className="font-bold text-blue-300">{candidateName}</span></p>
-        <p className="text-sm text-yellow-400 mb-4">Please enter the ticket sent to your email and your email address.</p>
+        <p className="text-gray-400 mb-4">Voting for <span className="font-bold text-white">{candidateName}</span></p>
+        <p className="text-sm text-gray-300 mb-4">Please enter the ticket sent to your email and your email address.</p>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-1">
@@ -148,7 +151,7 @@ const VoteModal: React.FC<{
           </div>
           <div className="mt-6 flex justify-end gap-4">
             <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-600 hover:bg-gray-500 rounded-md">Cancel</button>
-            <button type="submit" className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md">Submit Vote</button>
+            <button type="submit" className="px-6 py-2 bg-white text-black hover:bg-gray-200 rounded-md font-semibold">Submit Vote</button>
           </div>
         </form>
       </div>
@@ -161,12 +164,40 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
   const [isRequestingTicket, setIsRequestingTicket] = useState(false);
   const [ticketRequested, setTicketRequested] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
+  const [timelineData, setTimelineData] = useState<any[]>([]);
+  const [turnoutData, setTurnoutData] = useState<any>(null);
+  const [genderStats, setGenderStats] = useState<any>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
   const buttonState = getButtonState(election, user);
   const timeLeft = useCountdown(election.endTime);
 
   const isElectionOver = new Date() > new Date(election.endTime);
   const isElectionLive = new Date() > new Date(election.startTime) && !isElectionOver;
   const showResults = isElectionOver || user?.role === 'teacher';
+
+  // Fetch statistics when results are shown
+  useEffect(() => {
+    if (showResults) {
+      const fetchStatistics = async () => {
+        setLoadingStats(true);
+        try {
+          const [timeline, turnout, gender] = await Promise.all([
+            getElectionTimeline(election.id),
+            getElectionTurnout(election.id),
+            getElectionGenderStats(election.id)
+          ]);
+          setTimelineData(timeline);
+          setTurnoutData(turnout);
+          setGenderStats(gender);
+        } catch (error) {
+          console.error('Error fetching statistics:', error);
+        } finally {
+          setLoadingStats(false);
+        }
+      };
+      fetchStatistics();
+    }
+  }, [showResults, election.id]);
 
   let winners: Candidate[] = [];
   if (isElectionOver && election.results && Object.keys(election.results).length > 0) {
@@ -211,14 +242,14 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
         isOpen={modalState.isOpen}
         onClose={handleCloseModal}
         onSubmit={handleConfirmVote}
-        candidateName={election.candidates.find(c => c.id === modalState.candidateId)?.name || ''}
+        candidateName={modalState.candidateId === 'NOTA' ? 'NOTA (None of the Above)' : election.candidates.find(c => c.id === modalState.candidateId)?.name || ''}
         userEmail={user?.email}
       />
 
       {isRequestingTicket && (
         <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
           <div className="bg-gray-800 rounded-lg shadow-xl p-8 text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-400 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
             <p className="text-white">Sending voting ticket to your email...</p>
           </div>
         </div>
@@ -239,7 +270,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
         </div>
       )}
 
-      <button onClick={onBack} className="text-blue-400 font-semibold">&larr; Back</button>
+      <button onClick={onBack} className="text-white font-semibold hover:text-gray-300 transition-colors">&larr; Back</button>
 
       <h2 className="text-4xl font-extrabold text-center text-white">{election.title}</h2>
       {election.description && <p className="text-center text-gray-400">{election.description}</p>}
@@ -267,17 +298,38 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
       {election.userVoted && user?.role !== 'teacher' ? (
         <ThanksForVoting />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          {election.candidates.map(candidate => (
-            <CandidateCard
-              key={candidate.id}
-              candidate={candidate}
-              onInitiateVote={handleInitiateVote}
-              buttonState={buttonState}
-              userRole={user?.role}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            {election.candidates.map(candidate => (
+              <CandidateCard
+                key={candidate.id}
+                candidate={candidate}
+                onInitiateVote={handleInitiateVote}
+                buttonState={buttonState}
+                userRole={user?.role}
+              />
+            ))}
+          </div>
+          {user?.role !== 'teacher' && (
+            <div className="flex justify-center mt-8">
+              <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col items-center p-6 text-center w-full max-w-xs border-2 border-red-500/50">
+                <div className="w-32 h-32 rounded-full bg-red-500/20 flex items-center justify-center mb-4 border-4 border-red-500/50">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <h4 className="text-lg font-semibold text-white mb-4">None of the Above (NOTA)</h4>
+                <button
+                  onClick={() => handleInitiateVote('NOTA')}
+                  disabled={buttonState.disabled}
+                  className={`w-full py-2 px-4 rounded-md font-bold text-white transition-colors duration-300 ${buttonState.disabled ? buttonState.className : 'bg-red-600 hover:bg-red-700'}`}
+                >
+                  {buttonState.text}
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       <h3 className="text-2xl font-bold text-center">{showResults ? (isElectionOver ? 'Final Results' : 'Live Results') : 'Results Hidden'}</h3>
@@ -286,8 +338,8 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
         {showResults ? (
           <>
             {winners.length > 0 && (
-              <div className="text-center mb-6 bg-yellow-500/10 border border-yellow-500 p-4 rounded-lg">
-                <h4 className="text-lg font-bold text-yellow-300">{winners.length > 1 ? 'Winners (Tie)' : 'Winner'}</h4>
+              <div className="text-center mb-6 bg-white/10 border border-white p-4 rounded-lg">
+                <h4 className="text-lg font-bold text-white">{winners.length > 1 ? 'Winners (Tie)' : 'Winner'}</h4>
                 {winners.map(winner => (
                   <div key={winner.id} className="mt-2">
                     <p className="text-2xl font-extrabold text-white">{winner.name}</p>
@@ -296,7 +348,35 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
                 ))}
               </div>
             )}
-            <ResultsChart candidates={election.candidates} results={election.results} />
+            <ResultsChart candidates={election.candidates} results={election.results} notaVotes={election.notaVotes || 0} />
+            
+            {/* Additional Statistics */}
+            {loadingStats ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading statistics...</p>
+              </div>
+            ) : (
+              <>
+                {timelineData.length > 0 && (
+                  <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-xl">
+                    <VotingTimelineChart data={timelineData} />
+                  </div>
+                )}
+                
+                {turnoutData && (
+                  <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-xl">
+                    <VoterTurnoutAnalytics data={turnoutData} />
+                  </div>
+                )}
+                
+                {genderStats && (
+                  <div className="mt-8 bg-gray-800 p-6 rounded-lg shadow-xl">
+                    <GenderVoteChart data={genderStats} />
+                  </div>
+                )}
+              </>
+            )}
           </>
         ) : (
           <div className="text-center py-12">

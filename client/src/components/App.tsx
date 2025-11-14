@@ -260,13 +260,13 @@ const App: React.FC = () => {
           onTeacherLogin={() => setView('teacher_login')}
         />;
       case 'student_login':
-        return <StudentLogin onLogin={handleLogin} />;
+        return <StudentLogin onLogin={handleLogin} onBack={() => setView('landing')} />;
       case 'teacher_login':
-        return <TeacherLogin onLogin={handleLogin} />;
+        return <TeacherLogin onLogin={handleLogin} onBack={() => setView('landing')} />;
       case 'student_dashboard':
-        return <ElectionList elections={elections} onSelectElection={handleSelectElection} userRole='student' />;
+        return <ElectionList elections={elections} onSelectElection={handleSelectElection} userRole='student' onBack={() => setView('landing')} />;
       case 'teacher_dashboard':
-        return <TeacherDashboard elections={elections} onSelectElection={handleSelectElection} onCreateNew={() => setView('create_election')} />;
+        return <TeacherDashboard elections={elections} onSelectElection={handleSelectElection} onCreateNew={() => setView('create_election')} onBack={() => setView('landing')} />;
       case 'create_election':
         return <CreateElectionForm onSubmit={handleCreateElection} onCancel={() => setView('teacher_dashboard')} />;
       case 'election_detail':

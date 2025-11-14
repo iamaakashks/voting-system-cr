@@ -30,6 +30,7 @@ export interface Election {
   userVoted?: boolean; // Optional because it's context-dependent on the logged-in user
   userVoteTxHash?: string; // The transaction hash of the user's vote
   userTicket?: string; // The user's ticket for this specific election
+  notaVotes?: number; // NOTA (None of the Above) votes
 }
 
 export interface Transaction {

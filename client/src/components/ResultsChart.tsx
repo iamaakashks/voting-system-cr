@@ -6,15 +6,26 @@ import { Candidate } from '../types';
 interface ResultsChartProps {
   candidates: Candidate[];
   results: { [candidateId: string]: number };
+  notaVotes?: number;
 }
 
-const COLORS = ['#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#ec4899'];
+const COLORS = ['#ffffff', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151'];
 
-const ResultsChart: React.FC<ResultsChartProps> = ({ candidates, results }) => {
+const ResultsChart: React.FC<ResultsChartProps> = ({ candidates, results, notaVotes = 0 }) => {
   const chartData = candidates.map(candidate => ({
     name: candidate.name,
     votes: results[candidate.id] || 0,
-  })).sort((a, b) => b.votes - a.votes);
+  }));
+  
+  // Add NOTA if there are votes
+  if (notaVotes > 0 || results['NOTA']) {
+    chartData.push({
+      name: 'NOTA',
+      votes: notaVotes || results['NOTA'] || 0,
+    });
+  }
+  
+  chartData.sort((a, b) => b.votes - a.votes);
 
   const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
