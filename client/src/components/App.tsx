@@ -1,17 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import Header from './Header';
-import ElectionList from './ElectionList';
-import ElectionDetail from './ElectionDetail';
-import Notification from './Notification';
-import Spinner from './Spinner';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
+
+import Layout from './layout/Layout';
+import ProtectedRoute from './layout/ProtectedRoute';
+import Dashboard from './Dashboard';
+import ElectionDetailPage from '../pages/ElectionDetailPage';
 import StudentLogin from './StudentLoginNew';
 import TeacherLogin from './TeacherLogin';
-import TeacherDashboard from './TeacherDashboard';
-import TransactionFeed from './TransactionFeed';
 import LandingPage from './LandingPage';
 import CreateElectionForm from './CreateElectionForm';
+import Spinner from './Spinner';
 
-// Import ALL functions from your new API file
 import {
   login,
   getMe,
@@ -38,14 +37,15 @@ interface CreateElectionData {
   candidates: { id: string; name: string; usn: string }[];
 }
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [elections, setElections] = useState<Election[]>([]);
-  const [selectedElection, setSelectedElection] = useState<Election | null>(null);
-  const [view, setView] = useState<'landing' | 'student_login' | 'teacher_login' | 'student_dashboard' | 'teacher_dashboard' | 'election_detail' | 'create_election'>('landing');
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [notification, setNotification] = useState<{ message: React.ReactNode; type: 'success' | 'error' } | null>(null);
   const [transactionFeed, setTransactionFeed] = useState<Transaction[]>([]);
+  
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const showNotification = useCallback((message: React.ReactNode, type: 'success' | 'error') => {
     setNotification({ message, type });
@@ -57,55 +57,32 @@ const App: React.FC = () => {
     setAuthToken(null);
     setCurrentUser(null);
     setElections([]);
-    setSelectedElection(null);
     setTransactionFeed([]);
-    setView('landing');
     showNotification('You have been logged out.', 'success');
-  }, []);
+    navigate('/');
+  }, [navigate, showNotification]);
 
   const fetchStudentData = useCallback(async () => {
     try {
-      // Load elections (critical) and transactions (non-critical) separately
       const electionsData = await getElectionsForUser();
       setElections(electionsData);
-      setView('student_dashboard');
-      
-      // Try to load transactions, but don't fail the whole dashboard if it fails
-      try {
-        const transactionsData = await getRecentTransactions();
-        setTransactionFeed(transactionsData);
-      } catch (transactionError: any) {
-        console.warn('Failed to load transactions:', transactionError);
-        // Set empty array if transactions fail to load
-        setTransactionFeed([]);
-      }
+      const transactionsData = await getRecentTransactions();
+      setTransactionFeed(transactionsData);
     } catch (error: any) {
       console.error('Error loading student dashboard:', error);
-      const message = error.response?.data?.message || 'Failed to load student dashboard.';
-      showNotification(message, 'error');
+      showNotification(error.response?.data?.message || 'Failed to load student dashboard.', 'error');
     }
   }, [showNotification]);
 
   const fetchTeacherData = useCallback(async () => {
     try {
-      // Load elections (critical) and transactions (non-critical) separately
       const electionsData = await getElectionsForTeacher();
       setElections(electionsData);
-      setView('teacher_dashboard');
-      
-      // Try to load transactions, but don't fail the whole dashboard if it fails
-      try {
-        const transactionsData = await getRecentTransactions();
-        setTransactionFeed(transactionsData);
-      } catch (transactionError: any) {
-        console.warn('Failed to load transactions:', transactionError);
-        // Set empty array if transactions fail to load
-        setTransactionFeed([]);
-      }
+      const transactionsData = await getRecentTransactions();
+      setTransactionFeed(transactionsData);
     } catch (error: any) {
       console.error('Error loading teacher dashboard:', error);
-      const message = error.response?.data?.message || 'Failed to load teacher dashboard.';
-      showNotification(message, 'error');
+      showNotification(error.response?.data?.message || 'Failed to load teacher dashboard.', 'error');
     }
   }, [showNotification]);
 
@@ -117,29 +94,30 @@ const App: React.FC = () => {
         try {
           const user = await getMe();
           setCurrentUser(user);
-
-          if (user.role === 'student') await fetchStudentData();
-          else await fetchTeacherData();
-
         } catch {
           handleLogout();
         }
-      } else {
-        setView('landing');
       }
       setIsLoading(false);
     };
     checkLoggedInUser();
-  }, [handleLogout, fetchStudentData, fetchTeacherData]);
+  }, [handleLogout]);
 
-  const fetchRecentTransactions = useCallback(async () => {
-    try {
-      const transactions = await getRecentTransactions();
-      setTransactionFeed(transactions);
-    } catch (error) {
-      console.error("Failed to fetch recent transactions:", error);
+  useEffect(() => {
+    if (currentUser) {
+      if (currentUser.role === 'student') {
+        fetchStudentData();
+        if (location.pathname.startsWith('/login')) {
+            navigate('/dashboard');
+        }
+      } else if (currentUser.role === 'teacher') {
+        fetchTeacherData();
+        if (location.pathname.startsWith('/login')) {
+            navigate('/dashboard');
+        }
+      }
     }
-  }, []);
+  }, [currentUser, fetchStudentData, fetchTeacherData, navigate, location.pathname]);
 
   const handleLogin = async (credentials: LoginCredentials) => {
     setIsLoading(true);
@@ -147,43 +125,20 @@ const App: React.FC = () => {
       const { token, user } = await login(credentials);
       localStorage.setItem('token', token);
       setAuthToken(token);
-      setCurrentUser(user);
+      setCurrentUser(user); // This will trigger the useEffect above
       showNotification(`Welcome, ${user.name}!`, 'success');
-
-      if (user.role === 'student') await fetchStudentData();
-      else await fetchTeacherData();
-
     } catch (error: any) {
       console.error('Login error details:', error);
-      // Handle different types of errors
       let message = 'An unknown error occurred.';
-      
-      if (error.message) {
-        message = error.message;
-      } else if (error.response?.data?.message) {
+      if (error.response?.data?.message) {
         message = error.response.data.message;
-      } else if (error.response?.status === 401 || error.response?.status === 403) {
-        message = 'Invalid credentials. Please check your email, USN, and password.';
-      } else if (error.response?.status === 500) {
-        message = 'Server error. Please try again later.';
-      } else if (error.code === 'ERR_NETWORK' || error.message?.includes('Network Error')) {
-        message = 'Cannot connect to server. Please check your connection and try again.';
+      } else if (error.code === 'ERR_NETWORK') {
+        message = 'Cannot connect to server. Please check your connection.';
+      } else {
+        message = 'Invalid credentials. Please try again.';
       }
-      
       showNotification(message, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSelectElection = async (electionId: string) => {
-    setIsLoading(true);
-    try {
-      const electionData = await getElectionById(electionId);
-      setSelectedElection(electionData);
-      setView('election_detail');
-    } catch {
-      showNotification('Failed to load election details.', 'error');
+      throw error; // Re-throw to be caught in the component
     } finally {
       setIsLoading(false);
     }
@@ -194,126 +149,43 @@ const App: React.FC = () => {
     setIsLoading(true);
     try {
       await createElection(electionData);
-      showNotification('Election created and tickets generated successfully!', 'success');
-      await fetchTeacherData();
+      showNotification('Election created successfully!', 'success');
+      await fetchTeacherData(); // Refresh data
+      navigate('/dashboard');
     } catch (error: any) {
-      const message = error.response?.data?.message || 'An unknown error occurred.';
-      showNotification(`Creation failed: ${message}`, 'error');
-      setView('teacher_dashboard');
+      showNotification(error.response?.data?.message || 'An unknown error occurred.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleBackToList = () => {
-    setSelectedElection(null);
-    setView(currentUser?.role === 'student' ? 'student_dashboard' : 'teacher_dashboard');
-  };
-
-  const handleVote = useCallback(async (electionId: string, candidateId: string, ticket: string, email: string) => {
-    if (!currentUser) {
-      showNotification('You must be logged in to vote.', 'error');
-      return;
-    }
-    setIsLoading(true);
-    try {
-      await postVoteWithEmail(electionId, candidateId, ticket, email);
-      const updatedElection = await getElectionById(electionId);
-
-      setSelectedElection(updatedElection);
-      setElections(prev => prev.map(e => e.id === electionId ? updatedElection : e));
-
-      await fetchRecentTransactions();
-
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'An unknown error occurred.';
-      showNotification(`Vote failed: ${message}`, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentUser, fetchRecentTransactions]);
-
-  const handleStopElection = async (electionId: string) => {
-    if (!window.confirm("Are you sure you want to stop this election now?")) return;
-    setIsLoading(true);
-    try {
-      const updatedElection = await stopElection(electionId);
-      setSelectedElection(updatedElection);
-      setElections(prev => prev.map(e => e.id === electionId ? updatedElection : e));
-      showNotification('Election has been stopped.', 'success');
-    } catch (error: any) {
-      const message = error.response?.data?.message || 'An unknown error occurred.';
-      showNotification(`Failed to stop election: ${message}`, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const renderContent = () => {
-    if (isLoading && view !== 'landing' && view !== 'student_login' && view !== 'teacher_login') return <Spinner />;
-
-    switch (view) {
-      case 'landing':
-        return <LandingPage 
-          onNavigateToLogin={() => setView('student_login')} 
-          onStudentLogin={() => setView('student_login')}
-          onTeacherLogin={() => setView('teacher_login')}
-        />;
-      case 'student_login':
-        return <StudentLogin onLogin={handleLogin} onBack={() => setView('landing')} />;
-      case 'teacher_login':
-        return <TeacherLogin onLogin={handleLogin} onBack={() => setView('landing')} />;
-      case 'student_dashboard':
-        return <ElectionList elections={elections} onSelectElection={handleSelectElection} userRole='student' onBack={() => setView('landing')} />;
-      case 'teacher_dashboard':
-        return <TeacherDashboard elections={elections} onSelectElection={handleSelectElection} onCreateNew={() => setView('create_election')} onBack={() => setView('landing')} />;
-      case 'create_election':
-        return <CreateElectionForm onSubmit={handleCreateElection} onCancel={() => setView('teacher_dashboard')} />;
-      case 'election_detail':
-        return selectedElection ? (
-          <ElectionDetail
-            election={selectedElection}
-            onVote={handleVote}
-            onBack={handleBackToList}
-            user={currentUser}
-            onStopElection={handleStopElection}
-          />
-        ) : null;
-      default:
-        return <LandingPage 
-          onNavigateToLogin={() => setView('student_login')} 
-          onStudentLogin={() => setView('student_login')}
-          onTeacherLogin={() => setView('teacher_login')}
-        />;
-    }
-  };
+  if (isLoading) {
+    return <Spinner />;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-900 font-sans">
-      <Header user={currentUser} onLogout={handleLogout} />
-      {view !== 'landing' ? (
-        <div className="flex flex-col md:flex-row">
-          <main className="container mx-auto px-4 py-8 flex-grow">
-            {notification && <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
-            {renderContent()}
-          </main>
-          {currentUser && (
-            <aside className="w-full md:w-80 lg:w-96 flex-shrink-0 p-4">
-              <TransactionFeed transactions={transactionFeed} />
-            </aside>
-          )}
-        </div>
-      ) : (
-        <main>
-          {notification && <Notification message={notification.message} type={notification.type} onClose={() => setNotification(null)} />}
-          {renderContent()}
-        </main>
-      )}
-      <footer className="text-center py-4 text-gray-500 border-t border-gray-700 mt-8">
-        VeriVote &copy; {new Date().getFullYear()} - A Transparent Voting Platform
-      </footer>
-    </div>
+    <Routes>
+      <Route path="/" element={<Layout user={currentUser} onLogout={handleLogout} notification={notification} setNotification={setNotification} transactions={transactionFeed} />}>
+        {/* Public Routes */}
+        <Route index element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage onNavigateToLogin={() => navigate('/login/student')} onStudentLogin={() => navigate('/login/student')} onTeacherLogin={() => navigate('/login/teacher')} />} />
+        <Route path="login/student" element={currentUser ? <Navigate to="/dashboard" /> : <StudentLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
+        <Route path="login/teacher" element={currentUser ? <Navigate to="/dashboard" /> : <TeacherLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute user={currentUser} />}>
+          <Route path="dashboard" element={<Dashboard user={currentUser!} elections={elections} onCreateNew={() => navigate('/elections/create')} />} />
+          <Route path="elections/create" element={<CreateElectionForm onSubmit={handleCreateElection} onCancel={() => navigate('/dashboard')} />} />
+          <Route path="elections/:id" element={<ElectionDetailPage user={currentUser} showNotification={showNotification} />} />
+        </Route>
+        
+        {/* Not Found */}
+        <Route path="*" element={<div><h2>404 Not Found</h2></div>} />
+      </Route>
+    </Routes>
   );
 };
 
+const App: React.FC = () => <AppContent />;
+
 export default App;
+
