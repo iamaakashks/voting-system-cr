@@ -421,12 +421,12 @@ router.get('/:id/turnout', protect, async (req: AuthRequest, res: Response) => {
       .sort({ timestamp: 1 });
 
     const startTime = new Date(election.startTime);
-    const now = new Date();
+    const endTime = new Date(election.endTime);
     const turnoutTimeline: { time: string; votes: number; percentage: number }[] = [];
     let cumulativeVotes = 0;
 
     // Create timeline with cumulative votes (using UTC to avoid timezone issues)
-    for (let time = new Date(startTime); time <= now; time.setUTCMinutes(time.getUTCMinutes() + 1)) {
+    for (let time = new Date(startTime); time <= endTime; time.setUTCMinutes(time.getUTCMinutes() + 1)) {
       const votesInMinute = transactions.filter(t => {
         const voteTime = new Date(t.timestamp);
         return voteTime >= new Date(time.getTime() - 60000) && voteTime < time;
@@ -482,13 +482,17 @@ router.get('/:id/gender-stats', protect, async (req: AuthRequest, res: Response)
 
     // Count votes by gender for each candidate
     transactions.forEach((tx: any) => {
-      if (tx.candidateId && tx.student && tx.student.gender) {
+      const gender = tx.student?.gender as 'male' | 'female' | undefined;
+      if (!gender) return; // Skip if gender is not defined
+
+      if (tx.candidateId) {
         const candidateId = tx.candidateId.toString();
-        const gender = tx.student.gender as 'male' | 'female';
-        
         if (genderStats[candidateId]) {
           genderStats[candidateId][gender]++;
         }
+      } else {
+        // This is a NOTA vote
+        genderStats['NOTA'][gender]++;
       }
     });
     

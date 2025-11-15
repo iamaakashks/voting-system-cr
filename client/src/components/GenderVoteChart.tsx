@@ -71,8 +71,8 @@ const GenderVoteChart: React.FC<GenderVoteChartProps> = ({ data }) => {
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend wrapperStyle={{ color: '#a0aec0' }} />
-            <Bar dataKey="male" name="Male Votes" fill="#3b82f6" />
-            <Bar dataKey="female" name="Female Votes" fill="#ec4899" />
+            <Bar dataKey="male" name="Male Votes" fill="#3b82f6" barSize={20} />
+            <Bar dataKey="female" name="Female Votes" fill="#ec4899" barSize={20} />
           </BarChart>
         </ResponsiveContainer>
       </div>
