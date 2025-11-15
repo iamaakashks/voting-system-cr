@@ -280,8 +280,8 @@ export const stopElection = async (electionId: string): Promise<Election> => {
     return res.data;
 };
 
-export const searchStudents = async (branch: string, section: string, name: string): Promise<{id: string, name: string, usn: string}[]> => {
-  const res = await api.get(`/students/search?branch=${branch}&section=${section}&name=${name}`);
+export const searchStudents = async (branch: string, section: string, admissionYear: number, name: string): Promise<{id: string, name: string, usn: string}[]> => {
+  const res = await api.get(`/students/search?branch=${branch}&section=${section}&admissionYear=${admissionYear}&name=${name}`);
   return res.data.map((s: any) => ({ ...s, id: s._id })); // Ensure 'id' is present
 };
 

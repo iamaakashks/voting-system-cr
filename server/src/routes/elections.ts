@@ -24,7 +24,7 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     return res.status(403).json({ message: 'Not authorized' });
   }
   
-  const { title, description, branch, section, startTime, endTime, candidates } = req.body;
+  const { title, description, branch, section, admissionYear, startTime, endTime, candidates } = req.body;
 
   try {
     const newElection = new Election({
@@ -32,11 +32,12 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       description: description || '',
       branch,
       section,
+      admissionYear,
       startTime,
       endTime,
       createdBy: req.user.id,
-      candidates: candidates.map((c: any) => ({ 
-        student: c.id, 
+      candidates: candidates.map((c: any) => ({
+        student: c.id,
         name: c.name,
         usn: c.usn
       }))

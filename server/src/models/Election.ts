@@ -6,6 +6,7 @@ export interface IElection extends Document {
   description: string;
   branch: string;
   section: string;
+  admissionYear: number; // Batch year for the election
   startTime: Date;
   endTime: Date;
   createdBy: ITeacher | Schema.Types.ObjectId; // Ref to Teacher
@@ -24,6 +25,7 @@ const ElectionSchema: Schema = new Schema({
   description: { type: String, required: false, default: '' },
   branch: { type: String, required: true },
   section: { type: String, required: true },
+  admissionYear: { type: Number, required: true },
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   createdBy: { type: Schema.Types.ObjectId, ref: 'Teacher', required: true },
@@ -34,10 +36,10 @@ const ElectionSchema: Schema = new Schema({
     votes: { type: Number, default: 0 }
   }],
   notaVotes: { type: Number, default: 0 }
-}, { 
+}, {
   timestamps: true,
   // Ensure virtuals are included when converting to JSON
-  toJSON: { virtuals: true }, 
+  toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 

@@ -8,6 +8,7 @@ interface CreateElectionData {
   description?: string; // Optional description
   branch: string;
   section: string;
+  admissionYear: number;
   startTime: string;
   endTime: string;
   candidates: { id: string; name: string; usn: string }[];
@@ -31,14 +32,20 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
   const [description, setDescription] = useState('');
   const [branch, setBranch] = useState('cs');
   const [section, setSection] = useState('a');
+  const [admissionYear, setAdmissionYear] = useState(2024);
   const [startTime, setStartTime] = useState('');
   const [candidates, setCandidates] = useState<CandidateOption[]>([]);
 
+  // Clear candidates when batch year changes
+  const handleAdmissionYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setAdmissionYear(Number(e.target.value));
+    setCandidates([]); // Clear selected candidates
+  };
+
   // Async function for react-select to load student options
   const loadStudentOptions = async (inputValue: string): Promise<CandidateOption[]> => {
-    if (inputValue.length < 2) return []; // Don't search for 1 char
     try {
-      const students = await searchStudents(branch, section, inputValue);
+      const students = await searchStudents(branch, section, admissionYear, inputValue);
       return students.map(s => ({
         value: s.id,
         label: `${s.name} (${s.usn})`,
@@ -72,6 +79,7 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
       description,
       branch,
       section,
+      admissionYear,
       startTime: startDate.toISOString(),
       endTime: endDate.toISOString(),
       candidates: candidates.map(c => ({ id: c.value, name: c.name, usn: c.usn })),
@@ -100,8 +108,8 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
           <textarea id="description" value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500"></textarea>
         </div>
         
-        {/* Branch and Section */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Branch, Section, and Admission Year */}
+        <div className="grid grid-cols-3 gap-4">
           <div>
             <label htmlFor="branch" className="block text-sm font-medium text-gray-300">Branch</label>
             <select id="branch" value={branch} onChange={e => setBranch(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500">
@@ -118,6 +126,15 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
               <option value="c">Section C</option>
             </select>
           </div>
+          <div>
+            <label htmlFor="admissionYear" className="block text-sm font-medium text-gray-300">Batch Year</label>
+            <select id="admissionYear" value={admissionYear} onChange={handleAdmissionYearChange} className="w-full bg-gray-700 border border-gray-600 rounded-md p-2 mt-1 text-white focus:ring-blue-500 focus:border-blue-500">
+              <option value={2022}>2022</option>
+              <option value={2023}>2023</option>
+              <option value={2024}>2024</option>
+              <option value={2025}>2025</option>
+            </select>
+          </div>
         </div>
         
         {/* Start Time */}
@@ -130,8 +147,9 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
         {/* Candidates Search */}
         <div>
           <label className="block text-sm font-medium text-gray-300">Candidates</label>
-          <p className="text-xs text-gray-400 mb-1">Search for students by name or USN. Branch and Section must be set correctly.</p>
+          <p className="text-xs text-gray-400 mb-1">Search for students by name or USN. Branch, Section, and Batch Year must be set correctly.</p>
           <AsyncSelect
+            key={`${admissionYear}-${branch}-${section}`}
             isMulti
             cacheOptions
             defaultOptions
