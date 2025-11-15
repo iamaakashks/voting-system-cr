@@ -7,7 +7,7 @@ interface ProtectedRouteProps {
   redirectPath?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ user, redirectPath = '/login/student' }) => {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ user, redirectPath = '/' }) => {
   if (!user) {
     return <Navigate to={redirectPath} replace />;
   }

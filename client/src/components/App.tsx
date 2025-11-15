@@ -58,6 +58,7 @@ const AppContent: React.FC = () => {
     setCurrentUser(null);
     setElections([]);
     setTransactionFeed([]);
+    sessionStorage.setItem('justLoggedOut', '1');
     showNotification('You have been logged out.', 'success');
     navigate('/');
   }, [navigate, showNotification]);
@@ -107,13 +108,21 @@ const AppContent: React.FC = () => {
     if (currentUser) {
       if (currentUser.role === 'student') {
         fetchStudentData();
-        if (location.pathname.startsWith('/login')) {
+        const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+        if (!justLoggedOut && location.pathname.startsWith('/login')) {
             navigate('/dashboard');
+        }
+        if (justLoggedOut) {
+            sessionStorage.removeItem('justLoggedOut'); // clear it
         }
       } else if (currentUser.role === 'teacher') {
         fetchTeacherData();
-        if (location.pathname.startsWith('/login')) {
+        const justLoggedOut = sessionStorage.getItem('justLoggedOut');
+        if (!justLoggedOut && location.pathname.startsWith('/login')) {
             navigate('/dashboard');
+        }
+        if (justLoggedOut) {
+            sessionStorage.removeItem('justLoggedOut'); // clear it
         }
       }
     }
@@ -167,7 +176,7 @@ const AppContent: React.FC = () => {
     <Routes>
       <Route path="/" element={<Layout user={currentUser} onLogout={handleLogout} notification={notification} setNotification={setNotification} transactions={transactionFeed} />}>
         {/* Public Routes */}
-        <Route index element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage onNavigateToLogin={() => navigate('/login/student')} onStudentLogin={() => navigate('/login/student')} onTeacherLogin={() => navigate('/login/teacher')} />} />
+        <Route index element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage onNavigateToLogin={() => navigate('/')} onStudentLogin={() => navigate('/login/student')} onTeacherLogin={() => navigate('/login/teacher')} />} />
         <Route path="login/student" element={currentUser ? <Navigate to="/dashboard" /> : <StudentLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
         <Route path="login/teacher" element={currentUser ? <Navigate to="/dashboard" /> : <TeacherLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
 

@@ -85,105 +85,153 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
   }
   
   try {
-    // --- ADDED LOG 1 ---
-    console.log(`[LOG 1/5] Fetching student: ${req.user.id}`);
-    const result = await findStudentModelById(req.user.id);
-    if (!result) {
-      console.error('[ERROR] Student not found in DB');
+    const studentId = new mongoose.Types.ObjectId(req.user.id);
+
+    const studentResult = await findStudentModelById(req.user.id);
+    if (!studentResult) {
       return res.status(404).json({ message: 'Student not found' });
     }
-    const student = result.student;
+    const student = studentResult.student;
 
-    // --- ADDED LOG 2 ---
-    console.log(`[LOG 2/5] Finding elections for: ${student.branch} - ${student.section}`);
-    const elections = await Election.find({
-      branch: student.branch,
-      section: student.section
-    }).populate('createdBy', 'name').sort({ startTime: -1 });
-
-    // --- ADDED LOG 3 ---
-    console.log(`[LOG 3/5] Found ${elections.length} elections. Starting processing...`);
+    const elections = await Election.aggregate([
+      {
+        $match: {
+          branch: student.branch,
+          section: student.section,
+        },
+      },
+      { $sort: { startTime: -1 } },
+      {
+        $lookup: {
+          from: 'tickets',
+          let: { electionId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$election', '$$electionId'] },
+                    { $eq: ['$student', studentId] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: 'ticket',
+        },
+      },
+      { $unwind: { path: '$ticket', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'transactions',
+          let: { electionId: '$_id' },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ['$election', '$$electionId'] },
+                    { $eq: ['$student', studentId] },
+                  ],
+                },
+              },
+            },
+            { $sort: { timestamp: -1 } },
+            { $limit: 1 },
+          ],
+          as: 'transaction',
+        },
+      },
+      { $unwind: { path: '$transaction', preserveNullAndEmptyArrays: true } },
+      {
+        $lookup: {
+          from: 'teachers',
+          localField: 'createdBy',
+          foreignField: '_id',
+          as: 'createdBy',
+        },
+      },
+      { $unwind: { path: '$createdBy', preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: 1,
+          title: 1,
+          description: 1,
+          branch: 1,
+          section: 1,
+          startTime: 1,
+          endTime: 1,
+          candidates: 1,
+          notaVotes: 1,
+          createdBy: { name: '$createdBy.name' },
+          userVoted: { $ifNull: ['$ticket.used', false] },
+          userVoteTxHash: '$transaction.txHash',
+          userTicket: {
+            $cond: {
+              if: {
+                $and: [
+                  '$ticket',
+                  { $eq: ['$ticket.used', false] },
+                  { $lt: [new Date(), '$endTime'] },
+                  { $gt: [new Date(), '$startTime'] },
+                ],
+              },
+              then: '$ticket.ticketString',
+              else: '$$REMOVE',
+            },
+          },
+        },
+      },
+    ]);
 
     const electionsWithDetails = await Promise.all(
       elections.map(async (election) => {
-        const ticket = await Ticket.findOne({
-          election: election._id,
-          student: student._id
-        });
-
-        // Get transaction hash if user has voted
-        let userVoteTxHash = undefined;
-        if (ticket && ticket.used) {
-          const transaction = await Transaction.findOne({
-            election: election._id,
-            student: student._id
-          }).sort({ timestamp: -1 });
-          if (transaction) {
-            userVoteTxHash = transaction.txHash;
-          }
-        }
-
-        // Generate gender-specific profile picture using avatar placeholder API
-        const getProfilePicture = async (studentId: string, candidateName: string) => {
+        const getProfilePicture = async (candidateId: string, candidateName: string) => {
           try {
-            const result = await findStudentModelById(studentId);
-            if (!result) {
-              const username = candidateName.split(' ')[0];
-              return `https://avatar.iran.liara.run/public/boy?username=${encodeURIComponent(username)}`;
-            }
-            const student = result.student;
-            const gender = student?.gender || 'male'; // Default to male if not set
-            // Use avatar placeholder API with gender-specific endpoints
+            const result = await findStudentModelById(candidateId);
+            const gender = result?.student?.gender || 'male';
+            const username = candidateName.split(' ')[0];
             const genderPath = gender === 'female' ? 'girl' : 'boy';
-            const username = candidateName.split(' ')[0]; // Use first name as username
             return `https://avatar.iran.liara.run/public/${genderPath}?username=${encodeURIComponent(username)}`;
           } catch (error) {
-            // Fallback to default male avatar
             const username = candidateName.split(' ')[0];
             return `https://avatar.iran.liara.run/public/boy?username=${encodeURIComponent(username)}`;
           }
         };
 
         const remappedCandidates = await Promise.all(
-          election.candidates.map(async (c) => {
+          election.candidates.map(async (c: any) => {
             const imageUrl = await getProfilePicture(c.student.toString(), c.name);
             return {
               id: c.student.toString(),
               name: c.name,
-              imageUrl
+              imageUrl,
             };
           })
         );
-        const results = election.candidates.reduce((acc, c) => {
-            acc[c.student.toString()] = c.votes;
-            return acc;
+
+        const results = election.candidates.reduce((acc: any, c: any) => {
+          acc[c.student.toString()] = c.votes;
+          return acc;
         }, {} as { [candidateId: string]: number });
-        
-        // Include NOTA votes in results
+
         if (election.notaVotes && election.notaVotes > 0) {
           results['NOTA'] = election.notaVotes;
         }
-        
+
         return {
-          ...election.toObject(),
+          ...election,
           id: election._id,
-          userVoted: ticket ? ticket.used : false,
-          userVoteTxHash: userVoteTxHash,
-          userTicket: (ticket && !ticket.used && new Date() < election.endTime && new Date() > election.startTime) ? ticket.ticketString : undefined,
           candidates: remappedCandidates,
-          results: results,
-          notaVotes: election.notaVotes || 0,
+          results,
         };
       })
     );
-    
-    // --- ADDED LOG 4 ---
-    console.log('[LOG 4/5] Successfully processed all elections.');
+
     res.json(electionsWithDetails);
 
   } catch (err: any) {
-    // --- ADDED LOG 5 ---
-    console.error('[LOG 5/5] CRITICAL ERROR in /api/elections/student:', err);
+    console.error('CRITICAL ERROR in /api/elections/student:', err);
     res.status(500).json({ message: 'Server Error: ' + err.message });
   }
 });

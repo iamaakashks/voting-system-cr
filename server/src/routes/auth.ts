@@ -486,11 +486,8 @@ router.get('/me', protect, async (req: AuthRequest, res: Response) => {
       if (!result) {
         return res.status(404).json({ message: 'Student not found' });
       }
-      user = result.student;
-      // Remove password from user object
-      const userObj = user.toObject();
-      delete userObj.password;
-      user = userObj;
+      user = result.student.toObject();
+      delete user.password;
     } else {
       user = await Teacher.findById(req.user.id).select('-password');
     }
@@ -499,7 +496,7 @@ router.get('/me', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'User not found' });
     }
     
-    res.json({ ...user.toObject(), role: req.user?.role });
+    res.json({ ...user, role: req.user?.role });
   } catch (err: any) {
     res.status(500).json({ message: 'Server Error: ' + err.message });
   }

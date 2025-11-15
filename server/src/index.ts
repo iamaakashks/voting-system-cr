@@ -17,7 +17,7 @@ const app = express();
 // Middleware
 // CORS configuration - allow requests from client domain
 const corsOptions = {
-  origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || '*', // Allow all origins in development, restrict in production
+  origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000', // Allow all origins in development, restrict in production
   credentials: true,
   optionsSuccessStatus: 200
 };
