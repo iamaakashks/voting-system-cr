@@ -468,24 +468,26 @@ router.get('/:id/gender-stats', protect, async (req: AuthRequest, res: Response)
       return res.status(404).json({ message: 'Election not found' });
     }
 
-    // Get all transactions with student gender info and candidateId
-    const transactions = await Transaction.find({ election: election._id })
-      .populate('student', 'gender');
+    // Get all transactions for this election
+    const transactions = await Transaction.find({ election: election._id });
 
     const genderStats: { [candidateId: string]: { male: number; female: number } } = {};
-    
+
     // Initialize all candidates
     election.candidates.forEach(candidate => {
       genderStats[candidate.student.toString()] = { male: 0, female: 0 };
     });
     genderStats['NOTA'] = { male: 0, female: 0 };
 
-    // Count votes by gender for each candidate
-    transactions.forEach((tx: any) => {
-      const gender = tx.student?.gender as 'male' | 'female' | undefined;
-      if (!gender) return; // Skip if gender is not defined
+    // Process each transaction and get student gender
+    for (const tx of transactions) {
+      const studentResult = await findStudentModelById(tx.student.toString());
+      if (!studentResult || !studentResult.student) continue;
 
-      if (tx.candidateId) {
+      const gender = studentResult.student.gender as 'male' | 'female';
+      if (!gender) continue; // Skip if gender is not defined
+
+      if (tx.candidateId && tx.candidateId !== 'NOTA') {
         const candidateId = tx.candidateId.toString();
         if (genderStats[candidateId]) {
           genderStats[candidateId][gender]++;
@@ -494,8 +496,8 @@ router.get('/:id/gender-stats', protect, async (req: AuthRequest, res: Response)
         // This is a NOTA vote
         genderStats['NOTA'][gender]++;
       }
-    });
-    
+    }
+
     res.json({
       candidates: election.candidates.map(c => ({
         candidateId: c.student.toString(),
