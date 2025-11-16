@@ -1,7 +1,6 @@
-
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import { Candidate } from '../types';
+import React from "react";
+import Chart from "react-apexcharts";
+import { Candidate } from "../types";
 
 interface ResultsChartProps {
   candidates: Candidate[];
@@ -9,60 +8,128 @@ interface ResultsChartProps {
   notaVotes?: number;
 }
 
-const COLORS = ['#ffffff', '#d1d5db', '#9ca3af', '#6b7280', '#4b5563', '#374151'];
+const ResultsChart: React.FC<ResultsChartProps> = ({
+  candidates,
+  results,
+  notaVotes = 0,
+}) => {
+  // Create series and labels for the pie chart
+  const labels: string[] = [];
+  const votes: number[] = [];
 
-const ResultsChart: React.FC<ResultsChartProps> = ({ candidates, results, notaVotes = 0 }) => {
-  const chartData = candidates.map(candidate => ({
-    name: candidate.name,
-    votes: results[candidate.id] || 0,
-  }));
-  
-  // Add NOTA if there are votes
-  if (notaVotes > 0 || results['NOTA']) {
-    chartData.push({
-      name: 'NOTA',
-      votes: notaVotes || results['NOTA'] || 0,
-    });
+  candidates.forEach((candidate) => {
+    labels.push(candidate.name);
+    votes.push(results[candidate.id] || 0);
+  });
+
+  if (notaVotes > 0 || results["NOTA"]) {
+    labels.push("NOTA");
+    votes.push(notaVotes || results["NOTA"] || 0);
   }
-  
-  chartData.sort((a, b) => b.votes - a.votes);
 
-  const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-gray-900 p-2 border border-gray-700 rounded-md shadow-lg">
-          <p className="label text-white">{`${label} : ${payload[0].value} votes`}</p>
-        </div>
-      );
-    }
-    return null;
+  const options: ApexCharts.ApexOptions = {
+    chart: {
+      type: "donut",
+      foreColor: "#cbd5e1",
+      toolbar: { show: false },
+    },
+
+    labels,
+
+    legend: {
+      position: "bottom",
+      labels: { colors: "#cbd5e1" },
+      markers: { radius: 12 },
+    },
+
+    stroke: {
+      width: 2,
+      colors: ["#0f172a"], // clean dark outline between slices
+    },
+
+    fill: {
+      type: "gradient",
+      gradient: {
+        shade: "dark",
+        gradientToColors: [
+          "#8b5cf6",
+          "#ec4899",
+          "#3b82f6",
+          "#22c55e",
+          "#f59e0b",
+        ],
+        shadeIntensity: 0.9,
+        type: "diagonal1",
+        opacityFrom: 0.9,
+        opacityTo: 0.9,
+        stops: [0, 100],
+      },
+    },
+
+    colors: [
+      "#6d28d9",
+      "#be185d",
+      "#1d4ed8",
+      "#15803d",
+      "#b45309",
+    ],
+
+    dataLabels: {
+      enabled: true,
+      style: {
+        colors: ["#ffffff"],
+        fontSize: "14px",
+        fontWeight: 600,
+      },
+      formatter: (val: number) => `${val.toFixed(1)}%`,
+    },
+
+    tooltip: {
+      theme: "dark",
+      y: {
+        formatter: (val: number) => `${val} votes`,
+      },
+    },
+
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "65%",
+          labels: {
+            show: true,
+            name: {
+              show: true,
+              fontSize: "18px",
+              color: "#e2e8f0",
+            },
+            value: {
+              show: true,
+              fontSize: "22px",
+              color: "white",
+              formatter: (value) => `${value} votes`,
+            },
+            total: {
+              show: true,
+              color: "#cbd5e1",
+              label: "Total",
+              formatter: () =>
+                votes.reduce((sum, val) => sum + val, 0).toString(),
+            },
+          },
+        },
+      },
+    },
   };
 
+  const series = votes;
+
   return (
-    <div style={{ width: '100%', height: 400 }}>
-      <ResponsiveContainer>
-        <BarChart
-          data={chartData}
-          margin={{
-            top: 5,
-            right: 30,
-            left: 20,
-            bottom: 5,
-          }}
-          barGap={10}
-        >
-          <CartesianGrid strokeDasharray="3 3" stroke="#4a5568" />
-          <XAxis dataKey="name" stroke="#a0aec0" tick={{ fill: '#a0aec0' }} />
-          <YAxis stroke="#a0aec0" allowDecimals={false} tick={{ fill: '#a0aec0' }}/>
-          <Tooltip content={<CustomTooltip />} cursor={{fill: 'rgba(128, 128, 128, 0.1)'}} />
-          <Legend wrapperStyle={{ color: '#a0aec0' }} />
-          <Bar dataKey="votes" name="Total Votes" fill="#8884d8">
-            {chartData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-            ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
+    <div>
+      <h2 className="text-center text-white text-xl font-bold mb-4">
+        Total Votes
+      </h2>
+
+      <Chart options={options} series={series} type="donut" height={380} />
     </div>
   );
 };

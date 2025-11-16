@@ -9,7 +9,7 @@ import Student2025 from '../models/Student2025';
 import Ticket from '../models/Ticket';
 import Transaction from '../models/Transaction';
 import mongoose from 'mongoose';
-import { sendNewElectionNotification } from '../utils/emailService';
+import { sendNewElectionNotification, sendWinnerNotification } from '../utils/emailService';
 import crypto from 'crypto';
 import { ITeacher } from '../models/Teacher';
 
@@ -630,11 +630,10 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
 // @desc    Manually stop an election
 // @access  Private (Teacher)
 router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
-  // ... (this route is fine)
   if (req.user?.role !== 'teacher') {
     return res.status(403).json({ message: 'Not authorized' });
   }
-  
+
   try {
     const election = await Election.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.user.id },
@@ -645,8 +644,43 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
     if (!election) {
       return res.status(404).json({ message: 'Election not found or you are not the creator' });
     }
-    
+
+    // Calculate results and send notifications
     const fullElection = await Election.findById(election._id).populate('createdBy', 'name');
+    if (fullElection) {
+      const results: { [candidateId: string]: number } = fullElection.candidates.reduce((acc, c) => {
+        acc[c.student.toString()] = c.votes;
+        return acc;
+      }, {} as { [candidateId:string]: number });
+
+      if (fullElection.notaVotes && fullElection.notaVotes > 0) {
+        results['NOTA'] = fullElection.notaVotes;
+      }
+
+      const maxVotes = Math.max(...Object.values(results));
+      const winners = fullElection.candidates.filter(c => results[c.student.toString()] === maxVotes);
+
+      if (winners.length > 0) {
+        const winnerEmails = [];
+        const winnerNames = [];
+        for (const winner of winners) {
+          const studentResult = await findStudentModelById(winner.student.toString());
+          if (studentResult && studentResult.student) {
+            winnerEmails.push(studentResult.student.email);
+            winnerNames.push(studentResult.student.name);
+          }
+        }
+
+        if (winnerEmails.length > 0) {
+          try {
+            const isTie = winners.length > 1;
+            await sendWinnerNotification(winnerEmails, fullElection.title, isTie, winnerNames);
+          } catch (emailError) {
+            console.error('Failed to send winner notification email:', emailError);
+          }
+        }
+      }
+    }
     
         // Generate gender-specific profile picture using avatar placeholder API
         const getProfilePicture = async (studentId: string, candidateName: string) => {

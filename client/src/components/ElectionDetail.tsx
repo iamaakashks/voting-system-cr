@@ -15,28 +15,48 @@ interface ElectionDetailProps {
 }
 
 // Countdown timer hook
-const useCountdown = (endTime: string) => {
+const useCountdown = (startTime: string, endTime: string) => {
   const [timeLeft, setTimeLeft] = useState('');
+  const [label, setLabel] = useState('');
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const difference = +new Date(endTime) - +new Date();
+      const now = +new Date();
+      const start = +new Date(startTime);
+      const end = +new Date(endTime);
+
+      let difference: number;
+      if (now < start) {
+        difference = start - now;
+        setLabel('Time Until Start');
+      } else if (now < end) {
+        difference = end - now;
+        setLabel('Time Remaining');
+      } else {
+        setTimeLeft('Election Closed');
+        setLabel('Election Ended');
+        return;
+      }
+
       if (difference > 0) {
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
         const minutes = Math.floor((difference / 1000 / 60) % 60);
         const seconds = Math.floor((difference / 1000) % 60);
-        return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+        setTimeLeft(`${days}d ${hours}h ${minutes}m ${seconds}s`);
+      } else {
+        // This case handles the moment the countdown reaches zero
+        // and avoids showing a negative countdown.
+        setTimeLeft('0d 0h 0m 0s');
       }
-      return 'Election Closed';
     };
 
-    setTimeLeft(calculateTimeLeft());
-    const timer = setInterval(() => setTimeLeft(calculateTimeLeft()), 1000);
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
     return () => clearInterval(timer);
-  }, [endTime]);
+  }, [startTime, endTime]);
 
-  return timeLeft;
+  return { timeLeft, label };
 };
 
 const getButtonState = (election: Election, user: User | null) => {
@@ -61,11 +81,12 @@ const CandidateCard: React.FC<{
   onInitiateVote: (candidateId: string) => void;
   buttonState: ReturnType<typeof getButtonState>;
   userRole?: 'student' | 'teacher';
-}> = ({ candidate, onInitiateVote, buttonState, userRole }) => (
+  isElectionOver: boolean;
+}> = ({ candidate, onInitiateVote, buttonState, userRole, isElectionOver }) => (
   <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col items-center p-6 text-center">
     <img src={candidate.imageUrl} alt={candidate.name} className="w-32 h-32 rounded-full object-cover mb-4 border-4 border-gray-700" />
     <h4 className="text-lg font-semibold text-white mb-4">{candidate.name}</h4>
-    {userRole !== 'teacher' && (
+    {userRole !== 'teacher' && !isElectionOver && (
       <button
         onClick={() => onInitiateVote(candidate.id)}
         disabled={buttonState.disabled}
@@ -169,7 +190,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
   const [genderStats, setGenderStats] = useState<any>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const buttonState = getButtonState(election, user);
-  const timeLeft = useCountdown(election.endTime);
+  const { timeLeft, label } = useCountdown(election.startTime, election.endTime);
 
   const isElectionOver = new Date() > new Date(election.endTime);
   const isElectionLive = new Date() > new Date(election.startTime) && !isElectionOver;
@@ -277,7 +298,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
 
       <div className="flex justify-center">
         <div className="p-4 rounded-lg bg-gray-700 text-center">
-          <p className="text-gray-300">{isElectionLive ? 'Time Remaining' : isElectionOver ? 'Election Ended' : 'Time Until Start'}</p>
+          <p className="text-gray-300">{label}</p>
           <p className="text-3xl font-bold text-white font-mono">{timeLeft}</p>
         </div>
       </div>
@@ -297,6 +318,11 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
 
       {election.userVoted && user?.role !== 'teacher' ? (
         <ThanksForVoting />
+      ) : isElectionOver ? (
+        <div className="text-center py-12">
+          <h4 className="text-2xl font-bold text-white mb-2">Voting is Closed</h4>
+          <p className="text-gray-400">The voting period for this election has ended.</p>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -307,10 +333,11 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({ election, user, onVote,
                 onInitiateVote={handleInitiateVote}
                 buttonState={buttonState}
                 userRole={user?.role}
+                isElectionOver={isElectionOver}
               />
             ))}
           </div>
-          {user?.role !== 'teacher' && (
+          {user?.role !== 'teacher' && !isElectionOver && (
             <div className="flex justify-center mt-8">
               <div className="bg-gray-800 rounded-lg shadow-lg overflow-hidden flex flex-col items-center p-6 text-center w-full max-w-xs border-2 border-red-500/50">
                 <div className="w-32 h-32 rounded-full bg-red-500/20 flex items-center justify-center mb-4 border-4 border-red-500/50">
