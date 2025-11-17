@@ -7,6 +7,7 @@
     "start": "node dist/index.js",
     "dev": "nodemon src/index.ts",
     "build": "tsc",
+    "test": "jest",
     "seeder": "ts-node src/seeder.ts",
     "seeder:destroy": "ts-node src/seeder.ts -d"
   },
@@ -31,9 +32,12 @@
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
+    "@types/jest": "^30.0.0",
     "@types/mongoose": "^5.11.96",
     "@types/nodemailer": "^7.0.3",
+    "jest": "^30.2.0",
     "nodemon": "^3.1.10",
+    "ts-jest": "^29.4.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
   }
