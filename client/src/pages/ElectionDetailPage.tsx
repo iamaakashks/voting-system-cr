@@ -1,18 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getElectionById, postVoteWithEmail, stopElection } from '../services/api';
-import { Election, User } from '../types';
+import { Election } from '../types';
+import { useAuth } from '../contexts/AuthContext';
+import { useNotification } from '../contexts/NotificationContext';
 import ElectionDetail from '../components/ElectionDetail';
 import Spinner from '../components/Spinner';
 
-interface ElectionDetailPageProps {
-    user: User | null;
-    showNotification: (message: React.ReactNode, type: 'success' | 'error') => void;
-}
-
-const ElectionDetailPage: React.FC<ElectionDetailPageProps> = ({ user, showNotification }) => {
+const ElectionDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const { currentUser } = useAuth();
+    const { showNotification } = useNotification();
     const [election, setElection] = useState<Election | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -35,7 +34,7 @@ const ElectionDetailPage: React.FC<ElectionDetailPageProps> = ({ user, showNotif
     }, [fetchElection]);
 
     const handleVote = useCallback(async (electionId: string, candidateId: string, ticket: string, email: string) => {
-        if (!user) {
+        if (!currentUser) {
             showNotification('You must be logged in to vote.', 'error');
             return;
         }
@@ -49,7 +48,7 @@ const ElectionDetailPage: React.FC<ElectionDetailPageProps> = ({ user, showNotif
         } finally {
             setIsLoading(false);
         }
-    }, [user, fetchElection, showNotification]);
+    }, [currentUser, fetchElection, showNotification]);
 
     const handleStopElection = useCallback(async (electionId: string) => {
         if (!window.confirm("Are you sure you want to stop this election now?")) return;
@@ -72,7 +71,7 @@ const ElectionDetailPage: React.FC<ElectionDetailPageProps> = ({ user, showNotif
     return (
         <ElectionDetail
             election={election}
-            user={user}
+            user={currentUser}
             onBack={() => navigate('/dashboard')}
             onVote={handleVote}
             onStopElection={handleStopElection}

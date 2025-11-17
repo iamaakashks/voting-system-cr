@@ -1,10 +1,6 @@
 import express, { Response } from 'express';
 import { protect, AuthRequest } from '../middleware/auth';
-import { getStudentModel } from '../utils/getStudentModel';
-import Student2022 from '../models/Student2022';
-import Student2023 from '../models/Student2023';
-import Student2024 from '../models/Student2024';
-import Student2025 from '../models/Student2025';
+import Student from '../models/Student';
 
 const router = express.Router();
 
@@ -37,11 +33,9 @@ router.get('/search', protect, async (req: AuthRequest, res: Response) => {
       ];
     }
 
-    // Search only the specified admission year collection
-    const StudentModel = getStudentModel(Number(admissionYear));
     // If no name provided, load more students for default options
     const limit = name ? 10 : 50;
-    const students = await StudentModel.find(query).select('name usn').limit(limit);
+    const students = await Student.find(query).select('name usn').limit(limit);
 
     res.json(students);
   } catch (err: any) {

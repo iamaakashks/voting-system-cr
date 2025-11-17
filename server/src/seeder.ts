@@ -1,14 +1,10 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import connectDB from "./db";
-import Student2022 from "./models/Student2022";
-import Student2023 from "./models/Student2023";
-import Student2024 from "./models/Student2024";
-import Student2025 from "./models/Student2025";
+import Student from "./models/Student";
 import Teacher from "./models/Teacher";
 import Ticket from "./models/Ticket";
 import Election from "./models/Election";
-import { getStudentModel } from "./utils/getStudentModel";
 
 // -----------------------------------------------------------------------------
 // FIRST NAME POOLS (50 MALE + 50 FEMALE)
@@ -61,10 +57,7 @@ const makeUSN = (year: number, branchCode: string, rollNumber: number) =>
 // -----------------------------------------------------------------------------
 const destroyData = async () => {
   await connectDB();
-  await Student2022.deleteMany();
-  await Student2023.deleteMany();
-  await Student2024.deleteMany();
-  await Student2025.deleteMany();
+  await Student.deleteMany();
   await Teacher.deleteMany();
   await Ticket.deleteMany();
   await Election.deleteMany();
@@ -79,10 +72,7 @@ const importData = async () => {
   try {
     await connectDB();
 
-    await Student2022.deleteMany();
-    await Student2023.deleteMany();
-    await Student2024.deleteMany();
-    await Student2025.deleteMany();
+    await Student.deleteMany();
     await Teacher.deleteMany();
     await Ticket.deleteMany();
     await Election.deleteMany();
@@ -112,6 +102,23 @@ const importData = async () => {
       password: hashedPassword,
       branch: "ci",
     });
+    
+    // ---------------- DEMO STUDENTS (2022 Batch) -----------------
+    const demoSections = ['a', 'b', 'c', 'd'];
+    for (const section of demoSections) {
+      const email = `student_2022_cs_${section}@nie.ac.in`;
+      studentsToCreate.push({
+        usn: `4NI22CS${section.charCodeAt(0)}00`,
+        name: `Demo Student (CS-${section.toUpperCase()})`,
+        email: email,
+        password: hashedPassword,
+        admissionYear: 2022,
+        branch: 'cs',
+        section: section,
+        gender: 'male',
+      });
+      usedEmails.add(email);
+    }
 
     // ---------------- RANDOM TEACHERS -----------------
     for (let i = 1; i <= 20; i++) {
@@ -188,27 +195,9 @@ const importData = async () => {
     console.log(`👨‍🏫 Teachers prepared: ${teachersToCreate.length}`);
 
     const insertedTeachers = await Teacher.insertMany(teachersToCreate);
+    const insertedStudents = await Student.insertMany(studentsToCreate);
     
-    // Insert students into their respective batch collections
-    const studentsByYear: { [year: number]: any[] } = {
-      2022: [],
-      2023: [],
-      2024: [],
-      2025: []
-    };
-    
-    studentsToCreate.forEach(student => {
-      studentsByYear[student.admissionYear].push(student);
-    });
-    
-    const insertedStudents: any[] = [];
-    for (const [yearStr, students] of Object.entries(studentsByYear)) {
-      const year = Number(yearStr);
-      const StudentModel = getStudentModel(year);
-      const inserted = await StudentModel.insertMany(students);
-      insertedStudents.push(...inserted);
-      console.log(`✅ Inserted ${inserted.length} students for year ${year}`);
-    }
+    console.log(`✅ Inserted ${insertedStudents.length} students into the unified collection.`);
 
     console.log("📊 Creating sample elections...");
 
@@ -258,6 +247,7 @@ const createSampleElections = async (teachers: any[], students: any[]) => {
       description: "Auto-generated seed election",
       branch: e.branch,
       section: e.section,
+      admissionYear: e.year,
       createdBy: teacher._id,
       startTime: new Date(now.getTime() - oneHour),
       endTime: new Date(now.getTime() + oneHour * 8),

@@ -255,32 +255,6 @@ const StudentLogin: React.FC<StudentLoginProps> = ({ onLogin, onBack }) => {
           </div>
         </form>
 
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-600" />
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-800 text-gray-400">
-                Quick login for demo (pass: password123)
-              </span>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleQuickLogin('2023cs_demostudentcs_a@nie.ac.in', '4NI23CS001', 'password123')}
-              className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600"
-            >
-              Student (CS-A)
-            </button>
-            <button
-              onClick={() => handleQuickLogin('2023ise_demostudentise_b@nie.ac.in', '4NI23IS001', 'password123')}
-              className="w-full text-center py-2 px-2 border border-gray-600 rounded-md shadow-sm text-xs font-medium text-gray-300 bg-gray-700 hover:bg-gray-600"
-            >
-              Student (ISE-B)
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import connectDB from './db';
 import authRoutes from './routes/auth';
 import electionRoutes from './routes/elections';
@@ -15,6 +16,8 @@ connectDB();
 const app = express();
 
 // Middleware
+app.use(helmet());
+
 // CORS configuration - allow requests from client domain
 const corsOptions = {
   origin: process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:3000', // Allow all origins in development, restrict in production

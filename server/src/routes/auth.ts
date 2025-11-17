@@ -49,6 +49,9 @@ const generateToken = (
   );
 };
 
+import Student from '../models/Student';
+// ... imports
+
 // @route   POST api/auth/register-student
 // @desc    (DEV ONLY) Register a new student
 router.post('/register-student', async (req: Request, res: Response) => {
@@ -80,14 +83,8 @@ router.post('/register-student', async (req: Request, res: Response) => {
     const sanitizedEmail = email.toLowerCase().trim();
     const sanitizedUSN = usn.toUpperCase().trim();
 
-    if (!admissionYear || ![2022, 2023, 2024, 2025].includes(admissionYear)) {
-      return res.status(400).json({ message: 'Invalid admission year. Must be 2022, 2023, 2024, or 2025.' });
-    }
-
-    const StudentModel = getStudentModel(admissionYear);
-    
-    // Check if student already exists
-    let student = await StudentModel.findOne({ 
+    // Check if student already exists in the single collection
+    let student = await Student.findOne({ 
       $or: [{ email: sanitizedEmail }, { usn: sanitizedUSN }]
     });
     
@@ -103,7 +100,7 @@ router.post('/register-student', async (req: Request, res: Response) => {
     const salt = await bcrypt.genSalt(12);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const newStudent = new StudentModel({
+    const newStudent = new Student({
       usn: sanitizedUSN,
       name: sanitizedName,
       email: sanitizedEmail,

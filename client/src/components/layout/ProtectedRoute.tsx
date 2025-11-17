@@ -1,14 +1,20 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { User } from '../../types';
+import { useAuth } from '../../contexts/AuthContext';
+import Spinner from '../Spinner';
 
 interface ProtectedRouteProps {
-  user: User | null;
   redirectPath?: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ user, redirectPath = '/' }) => {
-  if (!user) {
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ redirectPath = '/' }) => {
+  const { currentUser, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <Spinner />;
+  }
+
+  if (!currentUser) {
     return <Navigate to={redirectPath} replace />;
   }
 
