@@ -58,8 +58,8 @@ export const sendNewElectionNotification = async (emails: string[], electionTitl
       <p>A new election, <strong>${electionTitle}</strong>, has been created and is now live.</p>
       <p>You can cast your vote between:</p>
       <div style="background-color: #1f2937; color: #60a5fa; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0;">
-        <p><strong>Start Date:</strong> ${startDate.toLocaleString()}</p>
-        <p><strong>End Date:</strong> ${endDate.toLocaleString()}</p>
+        <p><strong>Start Date:</strong> ${startDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true, year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+        <p><strong>End Date:</strong> ${endDate.toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: true, year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
       </div>
       <p>Please log in to the VeriVote system to cast your vote:</p>
       <a href="https://crelectionblockchain.vercel.app/" style="display: block; width: 200px; margin: 20px auto; padding: 10px 20px; background-color: #2563eb; color: #ffffff; text-align: center; text-decoration: none; border-radius: 5px;">Go to Election</a>
