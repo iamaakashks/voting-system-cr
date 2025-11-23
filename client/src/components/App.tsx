@@ -32,9 +32,12 @@ interface CreateElectionData {
   candidates: { id:string; name: string; usn: string }[];
 }
 
+import { useSocket } from '../contexts/SocketContext';
+
 const AppContent: React.FC = () => {
   const { currentUser, isLoading, login } = useAuth();
   const { showNotification } = useNotification();
+  const socket = useSocket();
 
   const [elections, setElections] = useState<Election[]>([]);
   
@@ -81,6 +84,33 @@ const AppContent: React.FC = () => {
     }
   }, [currentUser, fetchStudentData, fetchTeacherData, navigate, location.pathname]);
 
+  useEffect(() => {
+    if (socket) {
+      socket.on('new-election', (newElection: Election) => {
+        if (currentUser && currentUser.role === 'student' && newElection.branch === currentUser.branch && newElection.section === currentUser.section) {
+          setElections((prevElections) => [newElection, ...prevElections]);
+          showNotification(`A new election has been created: ${newElection.title}`, 'success');
+        } else if (currentUser && currentUser.role === 'teacher') {
+          setElections((prevElections) => [newElection, ...prevElections]);
+          showNotification(`A new election has been created: ${newElection.title}`, 'success');
+        }
+      });
+
+      socket.on('election-stopped', (data: { electionId: string, election: Election }) => {
+        setElections((prevElections) =>
+          prevElections.map((election) =>
+            election.id === data.electionId ? data.election : election
+          )
+        );
+      });
+
+      return () => {
+        socket.off('new-election');
+        socket.off('election-stopped');
+      };
+    }
+  }, [socket, currentUser, showNotification]);
+
   const handleLogin = async (credentials: LoginCredentials) => {
     try {
       const user = await login(credentials);
@@ -105,7 +135,6 @@ const AppContent: React.FC = () => {
     try {
       await createElection(electionData);
       showNotification('Election created successfully!', 'success');
-      await fetchTeacherData(); // Refresh data
       navigate('/dashboard');
     } catch (error: any) {
       showNotification(error.response?.data?.message || 'An unknown error occurred.', 'error');
@@ -138,7 +167,14 @@ const AppContent: React.FC = () => {
   );
 };
 
-const App: React.FC = () => <AppContent />;
+import { SocketProvider } from '../contexts/SocketContext';
+
+const App: React.FC = () => (
+  <SocketProvider>
+    <AppContent />
+  </SocketProvider>
+);
 
 export default App;
+
 

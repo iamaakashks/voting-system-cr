@@ -16,6 +16,16 @@ import {
   getElectionTurnout,
   getElectionGenderStats,
 } from "../services/api";
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+
+interface ElectionDetailProps {
+    election: Election;
+    user: User | null;
+    onVote: (electionId: string, candidateId: string, ticket: string, email: string) => void;
+    onBack: () => void;
+    onStopElection: (electionId: string) => void;
+}
 
 // ---------------------------------------------------------
 // Countdown Hook
@@ -441,6 +451,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
   const [turnoutData, setTurnoutData] = useState<any | null>(null);
   const [genderStats, setGenderStats] = useState<any | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   const buttonState = getButtonState(election, user);
   const { timeLeft, label } = useCountdown(election.startTime, election.endTime);
@@ -475,7 +486,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
     return () => {
       mounted = false;
     };
-  }, [showResults, election.id]);
+  }, [showResults, election.id, election.results]);
 
   // Voting flow handlers (identical logic)
   const handleInitiateVote = async (candidateId: string) => {
@@ -504,7 +515,46 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
     setTicketRequested(false);
     setTicketError(null);
   };
-
+  
+  const handleDownload = () => {
+    setIsDownloadingPdf(true);
+    const input = document.getElementById('results-analytics');
+    if (input) {
+      input.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      setTimeout(() => {
+        html2canvas(input, {
+          useCORS: true,
+          scale: 2,
+          backgroundColor: '#0B0E14',
+          windowWidth: document.documentElement.offsetWidth,
+          windowHeight: document.documentElement.offsetHeight,
+        }).then((canvas) => {
+          const imgData = canvas.toDataURL('image/png');
+          const pdf = new jsPDF('p', 'mm', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          let position = 0;
+          let heightLeft = pdfHeight;
+          while (heightLeft >= 0) {
+            position = heightLeft - pdfHeight;
+            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
+            heightLeft -= pdf.internal.pageSize.getHeight();
+            if (heightLeft > 0) {
+              pdf.addPage();
+            }
+          }
+          pdf.save(`${election.title.replace(/ /g, '_')}_results.pdf`);
+          setIsDownloadingPdf(false);
+        }).catch(err => {
+          console.error("Error generating PDF:", err);
+          setIsDownloadingPdf(false);
+        });
+      }, 500);
+    } else {
+      setIsDownloadingPdf(false);
+    }
+  };
+  
   // ----------------------------------------------------------------
   // Render — main UI up to the candidates list (keeps original layout)
   // ----------------------------------------------------------------
@@ -602,142 +652,155 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
   {/* ===========================
       RESULTS & ANALYTICS
       =========================== */}
-  <h3 className="text-2xl font-bold text-center mt-12">
-    {showResults
-      ? isElectionOver
-        ? "Final Results"
-        : "Live Results"
-      : "Results Hidden"}
-  </h3>
-
-  <div
-    className="
-      bg-gray-900 p-6 rounded-xl shadow-xl
-      border border-[#4deeea33]
-      mt-4
-      hover:shadow-[0_0_20px_#4deeea55]
-      transition-all
-    "
-  >
-    {showResults ? (
-      <>
-        {/* ===========================
-            WINNER BOX
-            =========================== */}
-        {(() => {
-          let winners: Candidate[] = [];
-
-          if (isElectionOver && election.results && Object.keys(election.results).length > 0) {
-            const maxVotes = Math.max(...Object.values(election.results));
-            const winnerIds = Object.keys(election.results).filter(
-              (id) => election.results[id] === maxVotes
-            );
-            winners = election.candidates.filter((c) => winnerIds.includes(c.id));
-          }
-
-          return winners.length > 0 ? (
-            <div
-              className="
-                text-center mb-6 p-4 rounded-lg
-                bg-white/5 border border-white/20
-                shadow-[0_0_18px_#a86aff55]
-              "
-            >
-              <h4 className="text-lg font-bold text-white">
-                {winners.length > 1 ? "Winners (Tie)" : "Winner"}
-              </h4>
-
-              {winners.map((winner) => (
-                <div key={winner.id} className="mt-2">
-                  <p className="text-2xl font-extrabold text-white">{winner.name}</p>
-                  <p className="text-gray-400">
-                    Votes: {election.results[winner.id]}
-                  </p>
-                </div>
-              ))}
-            </div>
-          ) : null;
-        })()}
-
-        {/* ===========================
-            MAIN RESULTS CHART
-            =========================== */}
-        <ResultsChart
-          candidates={election.candidates}
-          results={election.results}
-          notaVotes={election.notaVotes || 0}
-        />
-
-        {/* ===========================
-            LOADING ANALYTICS
-            =========================== */}
-        {loadingStats ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4deeea] mx-auto mb-4"></div>
-            <p className="text-gray-400">Loading analytics…</p>
-          </div>
-        ) : (
+    <div id="results-analytics">
+      <h3 className="text-2xl font-bold text-center mt-12">
+        {showResults
+          ? isElectionOver
+            ? "Final Results"
+            : "Live Results"
+          : "Results Hidden"}
+      </h3>
+  
+      <div
+        className="
+          bg-gray-900 p-6 rounded-xl shadow-xl
+          border border-[#4deeea33]
+          mt-4
+          hover:shadow-[0_0_20px_#4deeea55]
+          transition-all
+        "
+      >
+        {showResults ? (
           <>
             {/* ===========================
-                VOTING TIMELINE
+                WINNER BOX
                 =========================== */}
-            {timelineData.length > 0 && (
-              <div
-                className="
-                  mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
-                  border border-[#4deeea33]
-                  hover:shadow-[0_0_20px_#4deeea55]
-                  transition-all
-                "
-              >
-                <VotingTimelineChart data={timelineData} />
-              </div>
-            )}
+            {(() => {
+              let winners: Candidate[] = [];
+
+              if (isElectionOver && election.results && Object.keys(election.results).length > 0) {
+                const maxVotes = Math.max(...Object.values(election.results));
+                const winnerIds = Object.keys(election.results).filter(
+                  (id) => election.results[id] === maxVotes
+                );
+                winners = election.candidates.filter((c) => winnerIds.includes(c.id));
+              }
+
+              return winners.length > 0 ? (
+                <div
+                  className="
+                    text-center mb-6 p-4 rounded-lg
+                    bg-white/5 border border-white/20
+                    shadow-[0_0_18px_#a86aff55]
+                  "
+                >
+                  <h4 className="text-lg font-bold text-white">
+                    {winners.length > 1 ? "Winners (Tie)" : "Winner"}
+                  </h4>
+
+                  {winners.map((winner) => (
+                    <div key={winner.id} className="mt-2">
+                      <p className="text-2xl font-extrabold text-white">{winner.name}</p>
+                      <p className="text-gray-400">
+                        Votes: {election.results[winner.id]}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : null;
+            })()}
 
             {/* ===========================
-                TURNOUT ANALYTICS
+                MAIN RESULTS CHART
                 =========================== */}
-            {turnoutData && (
-              <div
-                className="
-                  mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
-                  border border-[#4deeea33]
-                  hover:shadow-[0_0_20px_#4deeea55]
-                  transition-all
-                "
-              >
-                <VoterTurnoutAnalytics data={turnoutData} />
-              </div>
-            )}
+            <ResultsChart
+              candidates={election.candidates}
+              results={election.results}
+              notaVotes={election.notaVotes || 0}
+            />
 
             {/* ===========================
-                GENDER VOTING SPLIT
+                LOADING ANALYTICS
                 =========================== */}
-            {genderStats && (
-              <div
-                className="
-                  mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
-                  border border-[#4deeea33]
-                  hover:shadow-[0_0_20px_#4deeea55]
-                  transition-all
-                "
-              >
-                <GenderVoteChart data={genderStats} />
+            {loadingStats ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4deeea] mx-auto mb-4"></div>
+                <p className="text-gray-400">Loading analytics…</p>
               </div>
+            ) : (
+              <>
+                {/* ===========================
+                    VOTING TIMELINE
+                    =========================== */}
+                {timelineData.length > 0 && (
+                  <div
+                    className="
+                      mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
+                      border border-[#4deeea33]
+                      hover:shadow-[0_0_20px_#4deeea55]
+                      transition-all
+                    "
+                  >
+                    <VotingTimelineChart data={timelineData} />
+                  </div>
+                )}
+
+                {/* ===========================
+                    TURNOUT ANALYTICS
+                    =========================== */}
+                {turnoutData && (
+                  <div
+                    className="
+                      mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
+                      border border-[#4deeea33]
+                      hover:shadow-[0_0_20px_#4deeea55]
+                      transition-all
+                    "
+                  >
+                    <VoterTurnoutAnalytics data={turnoutData} />
+                  </div>
+                )}
+
+                {/* ===========================
+                    GENDER VOTING SPLIT
+                    =========================== */}
+                {genderStats && (
+                  <div
+                    className="
+                      mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
+                      border border-[#4deeea33]
+                      hover:shadow-[0_0_20px_#4deeea55]
+                      transition-all
+                    "
+                  >
+                    <GenderVoteChart data={genderStats} />
+                  </div>
+                )}
+              </>
             )}
           </>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-gray-400">
+              Results will be revealed after {new Date(election.endTime).toLocaleString()}
+            </p>
+          </div>
         )}
-      </>
-    ) : (
-      <div className="text-center py-12">
-        <p className="text-gray-400">
-          Results will be revealed after {new Date(election.endTime).toLocaleString()}
-        </p>
       </div>
-    )}
-  </div>
-</div>
-);
+      {isElectionOver && (
+        <div className="text-center mt-8">
+          <button
+            onClick={handleDownload}
+            disabled={isDownloadingPdf}
+            className="px-6 py-2 bg-white text-black rounded-md font-semibold hover:bg-gray-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {isDownloadingPdf ? 'Downloading...' : 'Download Results'}
+          </button>
+        </div>
+      )}
+      </div>
+    </div>
+  );
 };
 
 // ===========================

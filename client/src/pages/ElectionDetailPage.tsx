@@ -7,13 +7,17 @@ import { useNotification } from '../contexts/NotificationContext';
 import ElectionDetail from '../components/ElectionDetail';
 import Spinner from '../components/Spinner';
 
+import { useSocket } from '../contexts/SocketContext';
+
 const ElectionDetailPage: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { currentUser } = useAuth();
     const { showNotification } = useNotification();
     const [election, setElection] = useState<Election | null>(null);
+    const [userVoted, setUserVoted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const socket = useSocket();
 
     const fetchElection = useCallback(async () => {
         if (!id) return;
@@ -21,6 +25,7 @@ const ElectionDetailPage: React.FC = () => {
         try {
             const electionData = await getElectionById(id);
             setElection(electionData);
+            setUserVoted(electionData.userVoted);
         } catch (error) {
             showNotification('Failed to load election details.', 'error');
             navigate('/dashboard');
@@ -33,6 +38,43 @@ const ElectionDetailPage: React.FC = () => {
         fetchElection();
     }, [fetchElection]);
 
+    useEffect(() => {
+        if (socket) {
+            socket.on('new-election', (newElection: Election) => {
+                if (newElection.id === id) {
+                    setElection(newElection);
+                }
+            });
+
+            socket.on('new-vote', (data: { electionId: string, results: { [key: string]: number }, studentId: string }) => {
+                if (data.electionId === id) {
+                    setElection((prevElection) => {
+                        if (prevElection) {
+                            const updatedElection = { ...prevElection, results: data.results };
+                            if (data.studentId === currentUser?.id) {
+                                setUserVoted(true);
+                            }
+                            return updatedElection;
+                        }
+                        return null;
+                    });
+                }
+            });
+
+            socket.on('election-stopped', (data: { electionId: string, election: Election }) => {
+                if (data.electionId === id) {
+                    setElection(data.election);
+                }
+            });
+
+            return () => {
+                socket.off('new-election');
+                socket.off('new-vote');
+                socket.off('election-stopped');
+            };
+        }
+    }, [socket, id, currentUser]);
+
     const handleVote = useCallback(async (electionId: string, candidateId: string, ticket: string, email: string) => {
         if (!currentUser) {
             showNotification('You must be logged in to vote.', 'error');
@@ -41,14 +83,14 @@ const ElectionDetailPage: React.FC = () => {
         setIsLoading(true);
         try {
             await postVoteWithEmail(electionId, candidateId, ticket, email);
-            await fetchElection(); // Re-fetch to update
             showNotification('Vote cast successfully!', 'success');
+            setUserVoted(true);
         } catch (error: any) {
             showNotification(error.response?.data?.message || 'Vote failed.', 'error');
         } finally {
             setIsLoading(false);
         }
-    }, [currentUser, fetchElection, showNotification]);
+    }, [currentUser, showNotification]);
 
     const handleStopElection = useCallback(async (electionId: string) => {
         if (!window.confirm("Are you sure you want to stop this election now?")) return;
@@ -70,7 +112,7 @@ const ElectionDetailPage: React.FC = () => {
 
     return (
         <ElectionDetail
-            election={election}
+            election={{...election, userVoted}}
             user={currentUser}
             onBack={() => navigate('/dashboard')}
             onVote={handleVote}

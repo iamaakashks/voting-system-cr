@@ -12,6 +12,10 @@ import { ITeacher } from '../models/Teacher';
 
 const router = express.Router();
 
+
+
+// ... (rest of the imports)
+
 // @route   POST api/elections
 // @desc    Create a new election
 // @access  Private (Teacher)
@@ -44,6 +48,10 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       }))
     });
     await newElection.save();
+
+    // Emit a WebSocket event
+    const { getIO } = await import('../socket');
+    getIO().emit('new-election', newElection);
     
     // Send email notification to students
     if (candidates && candidates.length > 0) {
@@ -436,6 +444,16 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
     if (!election) {
       return res.status(404).json({ message: 'Election not found or you are not the creator' });
     }
+
+    const { getIO } = await import('../socket');
+    const results = election.candidates.reduce((acc, c) => {
+      acc[c.student.toString()] = c.votes;
+      return acc;
+    }, {} as { [candidateId: string]: number });
+    if (election.notaVotes) {
+      results['NOTA'] = election.notaVotes;
+    }
+    getIO().emit('election-stopped', { electionId: election._id, election: { ...election.toObject(), results } });
 
     const fullElection = await Election.findById(election._id).populate('createdBy', 'name');
     if (fullElection) {

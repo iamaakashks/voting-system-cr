@@ -8,9 +8,10 @@ import crypto from 'crypto';
 
 const router = express.Router();
 
-// @route   POST api/vote
-// @desc    Cast a vote
-// @access  Private (Student)
+
+
+// ... (rest of the imports)
+
 router.post('/', protect, async (req: AuthRequest, res: Response) => {
   if (req.user?.role !== 'student') {
     return res.status(403).json({ message: 'Not authorized' });
@@ -88,6 +89,20 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       candidateId: candidateId, // Store which candidate was voted for
       timestamp: new Date()
     });
+
+    // Fetch the updated election to broadcast the new results
+    const updatedElection = await Election.findById(electionId);
+    if (updatedElection) {
+      const results = updatedElection.candidates.reduce((acc, c) => {
+        acc[c.student.toString()] = c.votes;
+        return acc;
+      }, {} as { [candidateId: string]: number });
+      if (updatedElection.notaVotes) {
+        results['NOTA'] = updatedElection.notaVotes;
+      }
+      const { getIO } = await import('../socket');
+      getIO().emit('new-vote', { electionId, results, studentId });
+    }
 
     res.json({ message: 'Vote cast successfully!', txHash: mockTxHash });
 

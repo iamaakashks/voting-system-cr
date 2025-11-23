@@ -1,6 +1,7 @@
 import React from 'react';
 import { Election } from '../types';
 import { motion } from 'framer-motion';
+import { useState, useEffect } from "react";
 
 interface ElectionListProps {
   elections: Election[];
@@ -120,7 +121,21 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
   );
 };
 
-const ElectionList: React.FC<ElectionListProps> = ({ elections, onSelectElection, userRole }) => {
+const ElectionList: React.FC<ElectionListProps> = ({ elections: initialElections, onSelectElection, userRole }) => {
+  const [elections, setElections] = useState(initialElections);
+
+  useEffect(() => {
+    setElections(initialElections);
+  }, [initialElections]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setElections(elections => [...elections]);
+    }, 1000); // Rerender every second to update timers
+
+    return () => clearInterval(interval);
+  }, []);
+
   const title = userRole === 'student' ? 'Your Elections' : 'Manage Your Elections';
   const subtitle = userRole === 'student'
     ? 'Elections for your class are listed below. For live elections, use the ticket to vote.'

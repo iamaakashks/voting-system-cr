@@ -2,6 +2,8 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import http from 'http';
+import { initSocket } from './socket';
 import connectDB from './db';
 import authRoutes from './routes/auth';
 import electionRoutes from './routes/elections';
@@ -14,6 +16,10 @@ import ticketRoutes from './routes/tickets';
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO
+initSocket(server);
 
 // Middleware
 app.use(helmet());
@@ -47,4 +53,4 @@ app.use('/api/tickets', ticketRoutes);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => console.log(`Server started on port ${PORT}`));
+server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
