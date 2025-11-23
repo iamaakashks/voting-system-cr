@@ -23,6 +23,11 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
   const { title, description, branch, section, admissionYear, startTime, endTime, candidates } = req.body;
 
   try {
+    const existingElection = await Election.findOne({ title, createdBy: req.user.id });
+    if (existingElection) {
+      return res.status(409).json({ message: 'An election with this title already exists.' });
+    }
+
     const newElection = new Election({
       title,
       description: description || '',

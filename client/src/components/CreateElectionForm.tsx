@@ -34,6 +34,7 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
   const [admissionYear, setAdmissionYear] = useState<number>(2024);
   const [startTime, setStartTime] = useState('');
   const [candidates, setCandidates] = useState<CandidateOption[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleAdmissionYearChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setAdmissionYear(Number(e.target.value));
@@ -50,7 +51,7 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (candidates.length < 2) {
       alert('Please select at least two candidates.');
@@ -60,20 +61,24 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
       alert('Please select a start time.');
       return;
     }
-
+    setIsSubmitting(true);
     const startDate = new Date(startTime);
     const endDate = new Date(startDate.getTime() + 10 * 60 * 1000);
 
-    onSubmit({
-      title,
-      description,
-      branch,
-      section,
-      admissionYear,
-      startTime: startDate.toISOString(),
-      endTime: endDate.toISOString(),
-      candidates: candidates.map(c => ({ id: c.value, name: c.name, usn: c.usn })),
-    });
+    try {
+      await onSubmit({
+        title,
+        description,
+        branch,
+        section,
+        admissionYear,
+        startTime: startDate.toISOString(),
+        endTime: endDate.toISOString(),
+        candidates: candidates.map(c => ({ id: c.value, name: c.name, usn: c.usn })),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -160,7 +165,13 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
 
           <div className="flex justify-end gap-3">
             <button type="button" onClick={onCancel} className="px-5 py-2 rounded-md text-gray-300 hover:text-white">Cancel</button>
-            <button type="submit" className="px-6 py-2 rounded-md bg-white text-black font-semibold hover:bg-gray-200">Create Election</button>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="px-6 py-2 rounded-md bg-white text-black font-semibold hover:bg-gray-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? 'Creating...' : 'Create Election'}
+            </button>
           </div>
         </form>
       </div>
