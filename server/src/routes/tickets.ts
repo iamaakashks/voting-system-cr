@@ -24,6 +24,44 @@ router.get('/email-status', protect, async (req: AuthRequest, res: Response) => 
   res.json(status);
 });
 
+// @route   POST api/tickets/test-email
+// @desc    Send a test voting ticket email (for debugging)
+// @access  Private
+router.post('/test-email', protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const result = await findStudentModelById(req.user!.id);
+    
+    if (!result) {
+      res.status(404).json({ message: 'Student not found' });
+      return;
+    }
+
+    const student = result.student;
+    console.log(`🧪 Test email requested by student: ${student.email}`);
+    
+    // Send a test ticket email
+    await sendVotingTicket(
+      student.email,
+      'TEST-1234-5678-ABCD',
+      'Test Election - Email Verification'
+    );
+
+    res.json({ 
+      success: true, 
+      message: `Test email sent successfully to ${student.email}`,
+      email: student.email
+    });
+  } catch (error: any) {
+    console.error('❌ Test email failed:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Failed to send test email',
+      error: error.message,
+      details: error.toString()
+    });
+  }
+});
+
 // @route   POST api/tickets/request
 // @desc    Request a voting ticket for an election (sends ticket via email)
 // @access  Private (Student)
