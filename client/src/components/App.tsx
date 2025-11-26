@@ -143,6 +143,7 @@ const App: React.FC = () => {
       navigate('/dashboard');
     } catch (error: any) {
       showNotification(error.response?.data?.message || 'An unknown error occurred.', 'error');
+      throw error; // Re-throw to let the form handle the state
     }
   };
 

@@ -68,20 +68,25 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     });
     console.log(`✓ Election created and broadcasted: ${newElection.title}`);
     
-    if (candidates && candidates.length > 0) {
-      const students = await Student.find({ branch, section, admissionYear });
-      const studentEmails = students.map(student => student.email);
-
-      if (studentEmails.length > 0) {
-        try {
-          await sendNewElectionNotification(studentEmails, title, new Date(startTime), new Date(endTime));
-        } catch (emailError) {
-          console.error('Failed to send new election notification emails:', emailError);
-        }
-      }
-    }
-    
+    // Send response immediately
     res.status(201).json(newElection);
+    
+    // Send email notifications asynchronously in the background (non-blocking)
+    if (candidates && candidates.length > 0) {
+      Student.find({ branch, section, admissionYear })
+        .then(students => {
+          const studentEmails = students.map(student => student.email);
+          if (studentEmails.length > 0) {
+            return sendNewElectionNotification(studentEmails, title, new Date(startTime), new Date(endTime));
+          }
+        })
+        .then(() => {
+          console.log(`✓ Email notifications sent for election: ${title}`);
+        })
+        .catch(emailError => {
+          console.error('Failed to send new election notification emails:', emailError);
+        });
+    }
 
   } catch (err: any) {
     res.status(500).json({ message: 'Server Error: ' + err.message });
