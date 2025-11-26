@@ -80,7 +80,7 @@ const ElectionDetailPage: React.FC = () => {
             const ballot: Ballot = {
                 electionId,
                 candidateId,
-                ticketId: ticket,
+                ticketId: ticket.toUpperCase(),
                 timestamp: new Date().toISOString(),
             };
 
