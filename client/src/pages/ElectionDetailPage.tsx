@@ -7,8 +7,6 @@ import { useNotification } from '../contexts/NotificationContext';
 import ElectionDetail from '../components/ElectionDetail';
 import Spinner from '../components/Spinner';
 import { getOrCreateKeyPair, signMessage } from '../utils/keyManager';
-import { connectSocket, disconnectSocket, onNewVote, onElectionStarted, onElectionEnded, onElectionResultsUpdated, onElectionStopped } from '../services/socket';
-
 import { useSocket } from '../contexts/SocketContext';
 
 const ElectionDetailPage: React.FC = () => {
@@ -19,7 +17,7 @@ const ElectionDetailPage: React.FC = () => {
     const [election, setElection] = useState<Election | null>(null);
     const [userVoted, setUserVoted] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
-    const socket = useSocket();
+    const { socket } = useSocket();
 
     const fetchElection = useCallback(async () => {
         if (!id) return;
@@ -37,45 +35,40 @@ const ElectionDetailPage: React.FC = () => {
     }, [id, navigate, showNotification]);
 
     useEffect(() => {
-        if (!id) return;
+        if (!id || !socket) return;
         
         fetchElection();
-
-        // Connect to socket server
-        console.log('✓ Connecting to socket for election:', id);
-        connectSocket();
 
         const handleUpdate = (data: { electionId: string }) => {
             // If the update is for the election we are currently viewing, refresh the data
             if (data.electionId === id) {
-                console.log(`✓ Real-time update received for election ${id}. Refetching...`);
+                fetchElection();
+            }
+        };
+
+        const handleElectionStopped = (data: { electionId: string }) => {
+            if (data.electionId === id) {
+                showNotification('The election has been stopped.', 'success');
                 fetchElection();
             }
         };
 
         // Listen for all relevant events
-        onNewVote(handleUpdate);
-        onElectionStarted(handleUpdate);
-        onElectionEnded(handleUpdate);
-        
-        // Real-time results update when vote is cast
-        onElectionResultsUpdated(handleUpdate);
-        
-        // Election stopped notification
-        onElectionStopped((data) => {
-            if (data.electionId === id) {
-                console.log('✓ Election stopped event received for:', id);
-                showNotification('This election has been closed by the administrator.', 'warning');
-                fetchElection();
-            }
-        });
+        socket.on('vote:new', handleUpdate);
+        socket.on('election:started', handleUpdate);
+        socket.on('election:ended', handleUpdate);
+        socket.on('election:results:updated', handleUpdate);
+        socket.on('election:stopped', handleElectionStopped);
 
-        // DON'T disconnect socket on component unmount - let App.tsx handle it
         return () => {
-            console.log('✓ Cleaning up election detail listeners');
+            socket.off('vote:new', handleUpdate);
+            socket.off('election:started', handleUpdate);
+            socket.off('election:ended', handleUpdate);
+            socket.off('election:results:updated', handleUpdate);
+            socket.off('election:stopped', handleElectionStopped);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [id]);
+        
+    }, [id, socket, fetchElection, showNotification]);
 
     const handleVote = useCallback(async (electionId: string, candidateId: string, ticket: string) => {
         if (!currentUser) {
@@ -111,7 +104,7 @@ const ElectionDetailPage: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    }, [currentUser, showNotification]);
+    }, [currentUser, showNotification, fetchElection]);
 
     const handleStopElection = useCallback(async (electionId: string) => {
         if (!window.confirm("Are you sure you want to stop this election now?")) return;

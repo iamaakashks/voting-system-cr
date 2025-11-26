@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotification } from '../contexts/NotificationContext';
+import { useSocket } from '../contexts/SocketContext';
 
 import Layout from './layout/Layout';
 import ProtectedRoute from './layout/ProtectedRoute';
@@ -19,9 +20,8 @@ import {
   createElection,
   LoginCredentials
 } from '../services/api';
-import { connectSocket, disconnectSocket, onElectionStarted, onElectionEnded, onElectionCreated, onElectionStopped } from '../services/socket';
 
-import { Election, User } from '../types';
+import { Election } from '../types';
 
 interface CreateElectionData {
   title: string;
@@ -33,12 +33,10 @@ interface CreateElectionData {
   candidates: { id:string; name: string; usn: string }[];
 }
 
-import { useSocket } from '../contexts/SocketContext';
-
-const AppContent: React.FC = () => {
+const App: React.FC = () => {
   const { currentUser, isLoading, login } = useAuth();
   const { showNotification } = useNotification();
-  const socket = useSocket();
+  const { socket } = useSocket();
 
   const [elections, setElections] = useState<Election[]>([]);
   
@@ -88,10 +86,7 @@ const AppContent: React.FC = () => {
 
   // Effect for handling real-time updates - MUST run only once per login session
   useEffect(() => {
-    if (!currentUser) return;
-    
-    console.log('✓ Setting up socket connection for real-time updates...');
-    connectSocket();
+    if (!currentUser || !socket) return;
 
     const handleUpdate = () => {
       console.log("✓ Election event received, refetching elections list...");
@@ -108,66 +103,18 @@ const AppContent: React.FC = () => {
       }
     };
 
-    onElectionStarted(handleUpdate);
-    onElectionEnded(handleUpdate);
-    onElectionCreated(handleUpdate); // Real-time: New election created
-    onElectionStopped(handleUpdate); // Real-time: Election stopped
+    socket.on('election:started', handleUpdate);
+    socket.on('election:ended', handleUpdate);
+    socket.on('election:created', handleUpdate);
+    socket.on('election:stopped', handleUpdate);
 
     return () => {
-      console.log('⚠ Cleaning up socket connection on logout...');
-      disconnectSocket();
+      socket.off('election:started', handleUpdate);
+      socket.off('election:ended', handleUpdate);
+      socket.off('election:created', handleUpdate);
+      socket.off('election:stopped', handleUpdate);
     };
-    // Only depend on currentUser.id to avoid re-running on every state change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser?.id]);
-
-  const loadElections = useCallback(async () => {
-    if (currentUser) {
-      try {
-        let electionsData: Election[] = [];
-        if (currentUser.role === 'student') {
-          electionsData = await getElectionsForUser();
-        } else if (currentUser.role === 'teacher') {
-          electionsData = await getElectionsForTeacher();
-        }
-        setElections(electionsData);
-      } catch (error) {
-        console.error('Error fetching elections:', error);
-        showNotification('Failed to load elections.', 'error');
-      }
-    }
-  }, [currentUser, showNotification]);
-
-  useEffect(() => {
-    if (socket && currentUser) {
-      // Listen for new election created
-      socket.on('election:created', (data: { electionId: string, title: string }) => {
-        console.log('New election created:', data);
-        // Refresh elections list
-        loadElections();
-        showNotification(`A new election has been created: ${data.title}`, 'success');
-      });
-
-      // Listen for election stopped
-      socket.on('election:stopped', (data: { electionId: string }) => {
-        console.log('Election stopped:', data);
-        // Refresh elections list
-        loadElections();
-      });
-
-      // Listen for results updated (when vote is cast)
-      socket.on('election:results:updated', (data: { electionId: string }) => {
-        console.log('Election results updated:', data);
-        // This will be handled by ElectionDetailPage component if it's open
-      });
-
-      return () => {
-        socket.off('election:created');
-        socket.off('election:stopped');
-        socket.off('election:results:updated');
-      };
-    }
-  }, [socket, currentUser, showNotification, loadElections]);
+  }, [currentUser, socket, fetchStudentData, fetchTeacherData]);
 
   const handleLogin = async (credentials: LoginCredentials) => {
     try {
@@ -225,14 +172,4 @@ const AppContent: React.FC = () => {
   );
 };
 
-import { SocketProvider } from '../contexts/SocketContext';
-
-const App: React.FC = () => (
-  <SocketProvider>
-    <AppContent />
-  </SocketProvider>
-);
-
 export default App;
-
-

@@ -62,7 +62,8 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
         branch: newElection.branch,
         section: newElection.section,
         status: newElection.status,
-        admissionYear: newElection.admissionYear
+        admissionYear: newElection.admissionYear,
+        candidates: newElection.candidates
       }
     });
     console.log(`✓ Election created and broadcasted: ${newElection.title}`);

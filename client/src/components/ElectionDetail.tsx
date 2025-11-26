@@ -658,7 +658,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
       {/* Header */}
       <h2 className="text-4xl font-extrabold text-center text-white">{election.title}</h2>
       {/* Hide everything for students until election starts */}
-      {buttonState.label === "Not Started" && user?.role === "student" ? (
+      {buttonState.text === "Voting Not Started" && user?.role === "student" ? (
         // Show only countdown for students when election hasn't started
         <div className="text-center py-20">
           <div className="inline-block bg-gradient-to-br from-[#4deeea]/20 to-[#a86aff]/20 backdrop-blur-lg p-12 rounded-2xl border border-[#4deeea]/30 shadow-[0_0_30px_#4deeea44]">
@@ -674,19 +674,21 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
           {election.description && <p className="text-center text-gray-400">{election.description}</p>}
 
           {/* Timer */}
-          <div className="flex justify-center">
-            <div
-              className="
-                p-4 rounded-lg bg-gray-900 text-center border border-[#4deeea55]
-                shadow-[0_0_14px_#4deeea33]
-                hover:shadow-[0_0_20px_#a86aff55]
-                transition-all
-              "
-            >
-              <p className="text-gray-300">{label}</p>
-              <p className="text-3xl font-bold text-white font-mono tracking-widest">{timeLeft}</p>
+          {isElectionLive && (
+            <div className="flex justify-center">
+              <div
+                className="
+                  p-4 rounded-lg bg-gray-900 text-center border border-[#4deeea55]
+                  shadow-[0_0_14px_#4deeea33]
+                  hover:shadow-[0_0_20px_#a86aff55]
+                  transition-all
+                "
+              >
+                <p className="text-gray-300">{label}</p>
+                <p className="text-3xl font-bold text-white font-mono tracking-widest">{timeLeft}</p>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Teacher Stop */}
           {user?.role === "teacher" && isElectionLive && (

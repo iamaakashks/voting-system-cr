@@ -2,6 +2,8 @@ import React from 'react';
 import { Election } from '../types';
 import { motion } from 'framer-motion';
 import { useState, useEffect } from "react";
+import { useSocket } from '../contexts/SocketContext';
+import { useAuth } from '../contexts/AuthContext';
 
 interface ElectionListProps {
   elections: Election[];
@@ -123,10 +125,34 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
 
 const ElectionList: React.FC<ElectionListProps> = ({ elections: initialElections, onSelectElection, userRole }) => {
   const [elections, setElections] = useState(initialElections);
+  const { socket } = useSocket();
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     setElections(initialElections);
   }, [initialElections]);
+
+  useEffect(() => {
+    if (userRole === 'student' && socket) {
+      const handleElectionCreated = (data: any) => {
+        const newElection = data.election;
+        if (currentUser?.branch === newElection.branch && currentUser?.section === newElection.section) {
+          setElections(prevElections => {
+            if (!prevElections.find(e => e.id === newElection.id)) {
+              return [newElection, ...prevElections];
+            }
+            return prevElections;
+          });
+        }
+      };
+
+      socket.on('election:created', handleElectionCreated);
+
+      return () => {
+        socket.off('election:created', handleElectionCreated);
+      };
+    }
+  }, [userRole, currentUser, socket]);
 
   useEffect(() => {
     const interval = setInterval(() => {

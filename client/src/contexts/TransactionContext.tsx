@@ -2,7 +2,7 @@ import React, { createContext, useState, useContext, useCallback, ReactNode, use
 import { Transaction } from '../types';
 import { getRecentTransactions } from '../services/api';
 import { useAuth } from './AuthContext';
-import { connectSocket, disconnectSocket, onNewVote } from '../services/socket';
+import { useSocket } from './SocketContext';
 
 // Define the shape of the context
 interface TransactionContextType {
@@ -21,6 +21,7 @@ interface TransactionProviderProps {
 export const TransactionProvider: React.FC<TransactionProviderProps> = ({ children }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const { currentUser } = useAuth();
+  const { socket } = useSocket();
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -33,25 +34,24 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
   }, []);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && socket) {
       fetchTransactions();
       
-      // Connect to socket and listen for new votes
-      connectSocket();
-      
-      onNewVote(() => {
+      const handleNewVote = () => {
         console.log('New vote detected, refreshing transaction feed...');
         fetchTransactions();
-      });
-      
+      };
+
+      socket.on('vote:new', handleNewVote);
+
       return () => {
-        disconnectSocket();
+        socket.off('vote:new', handleNewVote);
       };
     } else {
       // Clear transactions when user logs out
       setTransactions([]);
     }
-  }, [currentUser, fetchTransactions]);
+  }, [currentUser, socket, fetchTransactions]);
 
   const value = {
     transactions,
