@@ -27,8 +27,18 @@ if (process.env.SMTP_USER && process.env.SMTP_PASS) {
 }
 
 export const sendVotingTicket = async (email: string, ticket: string, electionTitle: string) => {
+  console.log(`📧 Attempting to send voting ticket to: ${email}`);
+  console.log(`📧 SMTP Configuration Check:`, {
+    host: process.env.SMTP_HOST || 'smtp.gmail.com',
+    port: process.env.SMTP_PORT || '587',
+    user: process.env.SMTP_USER ? '✓ SET' : '✗ NOT SET',
+    pass: process.env.SMTP_PASS ? '✓ SET' : '✗ NOT SET',
+  });
+
   if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    throw new Error('Email service is not configured correctly.');
+    const errorMsg = 'Email service is not configured correctly. SMTP_USER or SMTP_PASS is missing.';
+    console.error(`❌ ${errorMsg}`);
+    throw new Error(errorMsg);
   }
 
   const mailOptions = {
@@ -54,12 +64,20 @@ export const sendVotingTicket = async (email: string, ticket: string, electionTi
     `,
   };
 
+  console.log(`📧 Sending email from: ${mailOptions.from.address} to: ${email}`);
+
   try {
-    await transporter.sendMail(mailOptions);
-    console.log(`✓ Voting ticket sent to ${email} via Gmail SMTP`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✓ Voting ticket sent successfully to ${email} via Gmail SMTP`);
+    console.log(`✓ Message ID: ${info.messageId}`);
+    console.log(`✓ Response: ${info.response}`);
     return true;
   } catch (error: any) {
-    console.error('✗ Error sending email with Gmail SMTP:', error.message);
+    console.error('❌ Error sending voting ticket email:', error);
+    console.error('❌ Error code:', error.code);
+    console.error('❌ Error message:', error.message);
+    console.error('❌ Error response:', error.response);
+    console.error('❌ Error responseCode:', error.responseCode);
     throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
   }
 };

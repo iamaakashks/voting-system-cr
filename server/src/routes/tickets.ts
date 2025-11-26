@@ -7,6 +7,23 @@ import { sendVotingTicket } from '../utils/emailService';
 
 const router = express.Router();
 
+// @route   GET api/tickets/email-status
+// @desc    Check email service configuration status (for debugging)
+// @access  Private
+router.get('/email-status', protect, async (req: AuthRequest, res: Response) => {
+  const status = {
+    smtpConfigured: !!(process.env.SMTP_USER && process.env.SMTP_PASS),
+    smtpHost: process.env.SMTP_HOST || 'smtp.gmail.com',
+    smtpPort: process.env.SMTP_PORT || '587',
+    smtpUser: process.env.SMTP_USER ? 'SET (hidden)' : 'NOT SET',
+    smtpPass: process.env.SMTP_PASS ? 'SET (hidden)' : 'NOT SET',
+    emailFrom: process.env.EMAIL_FROM || process.env.SMTP_USER || 'not configured',
+    emailFromName: process.env.EMAIL_FROM_NAME || 'VeriVote System',
+  };
+
+  res.json(status);
+});
+
 // @route   POST api/tickets/request
 // @desc    Request a voting ticket for an election (sends ticket via email)
 // @access  Private (Student)
@@ -91,7 +108,10 @@ router.post('/request', protect, async (req: AuthRequest, res: Response) => {
         console.log(`✓ Voting ticket sent to ${student.email} for election: ${election.title}`);
       })
       .catch(emailError => {
-        console.error('Failed to send voting ticket email:', emailError);
+        console.error('❌ Failed to send voting ticket email to:', student.email);
+        console.error('❌ Email error details:', emailError);
+        console.error('❌ Error message:', emailError.message);
+        console.error('❌ Error stack:', emailError.stack);
         // Note: Ticket remains in database even if email fails
         // Consider adding a cleanup job or notification system for failed emails
       });
