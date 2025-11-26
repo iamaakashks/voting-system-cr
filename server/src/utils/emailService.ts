@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 // Verify SMTP connection
 if (process.env.SMTP_USER && process.env.SMTP_PASS) {
-  transporter.verify((error, success) => {
+  transporter.verify((error: Error | null, success: true | undefined) => {
     if (error) {
       console.error('✗ SMTP connection error:', error.message);
       console.warn('⚠ Email functionality may not work. Check your Gmail App Password.');
