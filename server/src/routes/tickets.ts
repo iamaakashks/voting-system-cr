@@ -79,21 +79,22 @@ router.post('/request', protect, async (req: AuthRequest, res: Response) => {
 
     await newTicket.save();
 
-    // Send ticket via email
-    try {
-      await sendVotingTicket(student.email, ticketString, election.title);
-      res.json({ 
-        message: 'Voting ticket sent to your email. Please check your inbox.',
-        expiresIn: 5 * 60 * 1000 // 5 minutes in milliseconds
+    // Send response immediately
+    res.json({ 
+      message: 'Voting ticket is being sent to your email. Please check your inbox.',
+      expiresIn: 5 * 60 * 1000 // 5 minutes in milliseconds
+    });
+
+    // Send ticket via email asynchronously in the background (non-blocking)
+    sendVotingTicket(student.email, ticketString, election.title)
+      .then(() => {
+        console.log(`✓ Voting ticket sent to ${student.email} for election: ${election.title}`);
+      })
+      .catch(emailError => {
+        console.error('Failed to send voting ticket email:', emailError);
+        // Note: Ticket remains in database even if email fails
+        // Consider adding a cleanup job or notification system for failed emails
       });
-    } catch (emailError) {
-      // If email fails, delete the ticket and return error
-      await Ticket.deleteOne({ _id: newTicket._id });
-      console.error('Error sending email:', emailError);
-      return res.status(500).json({ 
-        message: 'Failed to send ticket email. Please try again later.' 
-      });
-    }
 
   } catch (err: any) {
     console.error('Error requesting ticket:', err);

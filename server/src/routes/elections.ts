@@ -415,21 +415,26 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
       const maxVotes = Math.max(...Object.values(results));
       const winners = fullElection.candidates.filter(c => results[c.student.toString()] === maxVotes);
 
+      // Send winner notification emails asynchronously in the background (non-blocking)
       if (winners.length > 0) {
         const winnerStudentIds = winners.map(w => w.student.toString());
-        const winnerStudents = await Student.find({ _id: { $in: winnerStudentIds } });
         
-        const winnerEmails = winnerStudents.map(s => s.email);
-        const winnerNames = winnerStudents.map(s => s.name);
-
-        if (winnerEmails.length > 0) {
-          try {
-            const isTie = winners.length > 1;
-            await sendWinnerNotification(winnerEmails, fullElection.title, isTie, winnerNames);
-          } catch (emailError) {
+        Student.find({ _id: { $in: winnerStudentIds } })
+          .then(winnerStudents => {
+            const winnerEmails = winnerStudents.map(s => s.email);
+            const winnerNames = winnerStudents.map(s => s.name);
+            
+            if (winnerEmails.length > 0) {
+              const isTie = winners.length > 1;
+              return sendWinnerNotification(winnerEmails, fullElection.title, isTie, winnerNames);
+            }
+          })
+          .then(() => {
+            console.log(`✓ Winner notification emails sent for election: ${fullElection.title}`);
+          })
+          .catch(emailError => {
             console.error('Failed to send winner notification email:', emailError);
-          }
-        }
+          });
       }
     
       const remappedCandidates = await enrichCandidatesWithProfilePictures(fullElection.candidates);
