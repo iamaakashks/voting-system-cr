@@ -486,7 +486,10 @@ router.get('/me', protect, async (req: AuthRequest, res: Response) => {
       user = result.student.toObject();
       delete user.password;
     } else {
-      user = await Teacher.findById(req.user.id).select('-password');
+      const teacher = await Teacher.findById(req.user.id).select('-password');
+      if (teacher) {
+        user = teacher.toObject();
+      }
     }
 
     if (!user) {

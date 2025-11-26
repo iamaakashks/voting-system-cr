@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { User } from '../types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import ThemeToggle from './ThemeToggle';
+import UserProfileDropdown from './UserProfileDropdown';
 
 interface HeaderProps {
   user: User | null;
@@ -10,6 +11,8 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+
   // Get proper display name and initials
   const getDisplayName = () => {
     if (!user) return 'User';
@@ -51,16 +54,22 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
           
           {user && (
             <>
-              <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-gray-100 dark:bg-[#242424] rounded-lg border border-gray-200 dark:border-[#434546]">
-                <div className="w-10 h-10 bg-gradient-to-br from-[#b4a9e6] to-[#6d7382] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                  {getInitials()}
+              <div className="relative">
+                <div 
+                  className="hidden md:flex items-center gap-3 px-4 py-2 bg-gray-100 dark:bg-[#242424] rounded-lg border border-gray-200 dark:border-[#434546] cursor-pointer"
+                  onClick={() => setIsProfileDropdownOpen(prev => !prev)}
+                >
+                  <div className="w-10 h-10 bg-gradient-to-br from-[#b4a9e6] to-[#6d7382] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    {getInitials()}
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{getDisplayName()}</p>
+                    <Badge variant="secondary" className="text-xs bg-[#b4a9e6]/20 text-[#b4a9e6] dark:text-white border-[#b4a9e6]/30">
+                      {user.role || 'user'}
+                    </Badge>
+                  </div>
                 </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">{getDisplayName()}</p>
-                  <Badge variant="secondary" className="text-xs bg-[#b4a9e6]/20 text-[#b4a9e6] dark:text-white border-[#b4a9e6]/30">
-                    {user.role || 'user'}
-                  </Badge>
-                </div>
+                <UserProfileDropdown isOpen={isProfileDropdownOpen} onClose={() => setIsProfileDropdownOpen(false)} user={user} />
               </div>
               
               <Button onClick={onLogout} variant="destructive" size="sm" className="bg-red-500 hover:bg-red-600">
