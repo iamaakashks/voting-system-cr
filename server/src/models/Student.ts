@@ -10,6 +10,8 @@ export interface IStudent extends Document {
   branch: 'cs' | 'ci' | 'is';
   section: string;
   gender?: 'male' | 'female';
+  publicKey?: string;
+  keyAlgorithm?: string;
   isValidStudent: () => boolean;
 }
 
@@ -22,6 +24,8 @@ const StudentSchema: Schema = new Schema({
   branch: { type: String, enum: ['cs', 'ci', 'is'], required: true },
   section: { type: String, lowercase: true, required: true },
   gender: { type: String, enum: ['male', 'female'], required: false },
+  publicKey: { type: String },
+  keyAlgorithm: { type: String, default: "ed25519" }
 }, { timestamps: true });
 
 StudentSchema.methods.isValidStudent = function (): boolean {

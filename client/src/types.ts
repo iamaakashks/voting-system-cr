@@ -24,17 +24,23 @@ export interface Election {
   section: string; // e.g., 'a', 'b'
   startTime: string; // ISO 8601 format
   endTime: string; // ISO 8601 format
+  status: 'Pending' | 'Ongoing' | 'Finished';
   createdBy: string; // teacher's email
   candidates: Candidate[];
   results: { [candidateId: string]: number };
   userVoted?: boolean; // Optional because it's context-dependent on the logged-in user
-  userVoteTxHash?: string; // The transaction hash of the user's vote
   userTicket?: string; // The user's ticket for this specific election
   notaVotes?: number; // NOTA (None of the Above) votes
 }
 
 export interface Transaction {
-  txHash: string;
+  ballotHash: string;
   electionTitle: string;
   timestamp: string;
+}
+
+export interface LoginCredentials {
+  email: string;
+  usn: string;
+  password?: string;
 }

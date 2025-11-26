@@ -35,17 +35,12 @@ const TransactionFeed: React.FC<{ transactions: Transaction[] }> = ({ transactio
                     <p className="text-sm text-gray-500 text-center py-8">No recent votes yet.</p>
                 ) : (
                     transactions.map((tx) => (
-                        <div key={tx.txHash} className="bg-gray-900/50 p-3 rounded-md border border-gray-700/50">
+                        <div key={tx.ballotHash} className="bg-gray-900/50 p-3 rounded-md border border-gray-700/50">
                              <p className="text-sm font-semibold text-white truncate">{tx.electionTitle}</p>
                              <p className="text-xs text-gray-400 mt-1">{timeSince(new Date(tx.timestamp))}</p>
-                             <a 
-                                href={`https://sepolia.etherscan.io/tx/${tx.txHash}`} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-xs text-gray-400 hover:text-white mt-2 block truncate font-mono"
-                             >
-                                Tx: {tx.txHash.substring(0, 12)}...{tx.txHash.substring(tx.txHash.length - 10)}
-                            </a>
+                             <p className="text-xs text-gray-400 mt-2 block truncate font-mono">
+                                Hash: {tx.ballotHash.substring(0, 12)}...{tx.ballotHash.substring(tx.ballotHash.length - 10)}
+                            </p>
                         </div>
                     ))
                 )}

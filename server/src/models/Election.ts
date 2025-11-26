@@ -10,7 +10,7 @@ export interface IElection extends Document {
   startTime: Date;
   endTime: Date;
   createdBy: ITeacher | Schema.Types.ObjectId; // Ref to Teacher
-  status: 'upcoming' | 'live' | 'closed';
+  status: 'Pending' | 'Ongoing' | 'Finished';
   candidates: {
     student: Schema.Types.ObjectId; // Ref to Student
     name: string; // Denormalized for easy display
@@ -29,6 +29,11 @@ const ElectionSchema: Schema = new Schema({
   startTime: { type: Date, required: true },
   endTime: { type: Date, required: true },
   createdBy: { type: Schema.Types.ObjectId, ref: 'Teacher', required: true },
+  status: { 
+    type: String, 
+    enum: ['Pending', 'Ongoing', 'Finished'], 
+    default: 'Pending' 
+  },
   candidates: [{
     student: { type: Schema.Types.ObjectId, ref: 'Student', required: true },
     name: { type: String, required: true },
@@ -38,17 +43,8 @@ const ElectionSchema: Schema = new Schema({
   notaVotes: { type: Number, default: 0 }
 }, {
   timestamps: true,
-  // Ensure virtuals are included when converting to JSON
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
-});
-
-// Virtual to get status
-ElectionSchema.virtual('status').get(function(this: IElection) { // <-- FIX: Type `this` here
-  const now = new Date();
-  if (now < this.startTime) return 'upcoming';
-  if (now > this.endTime) return 'closed';
-  return 'live';
 });
 
 export default mongoose.model<IElection>('Election', ElectionSchema);

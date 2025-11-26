@@ -265,8 +265,15 @@ export const getElectionById = async (id: string): Promise<Election> => {
     return res.data;
 };
 
-export const postVote = async (electionId: string, candidateId: string, ticket: string): Promise<{ message: string, txHash: string }> => {
-    const res = await api.post('/vote', { electionId, candidateId, ticket });
+export interface Ballot {
+  electionId: string;
+  candidateId: string;
+  ticketId: string;
+  timestamp: string;
+}
+
+export const postSignedVote = async (ballot: Ballot, signature: string): Promise<{ message: string, ballotHash: string }> => {
+    const res = await api.post('/vote', { ballot, signature });
     return res.data;
 };
 
@@ -285,6 +292,11 @@ export const searchStudents = async (branch: string, section: string, admissionY
   return res.data.map((s: any) => ({ ...s, id: s._id })); // Ensure 'id' is present
 };
 
+export const registerPublicKey = async (publicKey: string): Promise<any> => {
+  const res = await api.post('/crypto/register-key', { publicKey });
+  return res.data;
+};
+
 export const getRecentTransactions = async (): Promise<Transaction[]> => {
   const res = await api.get('/transactions/recent');
   return res.data;
@@ -295,11 +307,6 @@ export const requestVotingTicket = async (electionId: string): Promise<{ message
   return res.data;
 };
 
-export const postVoteWithEmail = async (electionId: string, candidateId: string, ticket: string, email: string): Promise<{ message: string, txHash: string }> => {
-  const res = await api.post('/vote', { electionId, candidateId, ticket, email });
-  return res.data;
-};
-
 export interface TimelineData {
   time: string;
   votes: number;
@@ -307,37 +314,91 @@ export interface TimelineData {
 }
 
 export interface TurnoutData {
+
   totalEligibleVoters: number;
+
   totalVotesCast: number;
+
   voterTurnoutPercentage: number;
+
   remainingVoters: number;
+
   timeline: { time: string; votes: number; percentage: number }[];
+
 }
 
-export interface GenderStats {
-  candidates: {
-    candidateId: string;
-    candidateName: string;
-    maleVotes: number;
-    femaleVotes: number;
-  }[];
-  nota: {
-    maleVotes: number;
-    femaleVotes: number;
-  };
-}
+
 
 export const getElectionTimeline = async (electionId: string): Promise<TimelineData[]> => {
+
   const res = await api.get(`/elections/${electionId}/timeline`);
+
   return res.data;
+
 };
+
+
 
 export const getElectionTurnout = async (electionId: string): Promise<TurnoutData> => {
+
+
+
   const res = await api.get(`/elections/${electionId}/turnout`);
+
+
+
+  return res.data;
+
+
+
+};
+
+
+
+
+
+
+
+export interface ParticipationData {
+
+
+
+  votedStudents: { name: string, usn: string }[];
+
+
+
+  didNotVoteStudents: { name: string, usn: string }[];
+
+
+
+}
+
+
+
+
+
+
+
+export interface Participant {
+  name: string;
+  usn: string;
+  email: string;
+  branch: string;
+  section: string;
+  admissionYear: number;
+  votedAt: string;
+}
+
+export const getElectionParticipants = async (electionId: string): Promise<Participant[]> => {
+  const res = await api.get(`/elections/${electionId}/participants`);
   return res.data;
 };
 
-export const getElectionGenderStats = async (electionId: string): Promise<GenderStats> => {
-  const res = await api.get(`/elections/${electionId}/gender-stats`);
+export const getElectionParticipation = async (electionId: string): Promise<ParticipationData> => {
+  const res = await api.get(`/elections/${electionId}/participation`);
   return res.data;
 };
+
+
+
+

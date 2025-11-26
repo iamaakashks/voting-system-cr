@@ -1,7 +1,8 @@
 import React, { createContext, useState, useEffect, useContext, useCallback, ReactNode } from 'react';
 import { User, LoginCredentials } from '../types';
-import { getMe, login as apiLogin, setAuthToken } from '../services/api';
+import { getMe, login as apiLogin, setAuthToken, registerPublicKey } from '../services/api';
 import { useNavigate } from 'react-router-dom';
+import { getOrCreateKeyPair, getPublicKeyAsHex } from '../utils/keyManager';
 
 // Define the shape of the context
 interface AuthContextType {
@@ -57,6 +58,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('token', token);
       setAuthToken(token);
       setCurrentUser(user);
+
+      if (user.role === 'student') {
+        try {
+          const keyPair = await getOrCreateKeyPair();
+          const publicKey = getPublicKeyAsHex(keyPair);
+          await registerPublicKey(publicKey);
+          console.log('Public key registered successfully.');
+        } catch (error) {
+          console.error('Error during key registration:', error);
+          // Non-critical error, so we don't re-throw
+        }
+      }
+
       return user;
     } catch (error) {
       // The component calling login will handle showing the notification

@@ -7,6 +7,15 @@ interface GenderVoteChartProps {
 }
 
 const GenderVoteChart: React.FC<GenderVoteChartProps> = ({ data }) => {
+  // Guard against undefined or missing data
+  if (!data || !data.candidates) {
+    return (
+      <div className="w-full text-center py-8">
+        <p className="text-gray-400">No gender statistics available</p>
+      </div>
+    );
+  }
+
   const categories: string[] = [];
   const maleVotes: number[] = [];
   const femaleVotes: number[] = [];

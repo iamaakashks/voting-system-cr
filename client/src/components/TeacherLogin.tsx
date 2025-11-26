@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { LoginCredentials } from '../services/api';
+import { useTheme } from '../contexts/ThemeContext';
+import { GraduationCap, Eye, EyeOff, ArrowLeft, LogIn, Sparkles } from 'lucide-react';
 
 interface TeacherLoginProps {
   onLogin: (credentials: LoginCredentials) => void;
@@ -7,14 +9,23 @@ interface TeacherLoginProps {
 }
 
 const TeacherLogin: React.FC<TeacherLoginProps> = ({ onLogin, onBack }) => {
+  const { theme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (email && password) {
-      onLogin({ email, usn: 'N/A', password });
+      setIsLoading(true);
+      try {
+        await onLogin({ email, usn: 'N/A', password });
+      } catch (error) {
+        // Error handling is done in parent
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
   
@@ -131,6 +142,7 @@ const TeacherLogin: React.FC<TeacherLoginProps> = ({ onLogin, onBack }) => {
           >
             Teacher (AI&ML)
           </button>
+
         </div>
       </div>
 
@@ -141,6 +153,3 @@ const TeacherLogin: React.FC<TeacherLoginProps> = ({ onLogin, onBack }) => {
 };
 
 export default TeacherLogin;
-
-
-

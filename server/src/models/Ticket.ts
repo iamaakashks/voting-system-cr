@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model } from 'mongoose'; // Import Model
+import mongoose, { Schema, Document, Model } from 'mongoose';
 import crypto from 'crypto';
 
 // Interface for the Ticket Document (an instance)
@@ -8,15 +8,12 @@ export interface ITicket extends Document {
   ticketString: string;
   used: boolean;
   expiresAt: Date;
-  email: string; // Student's email for validation
 }
 
-// --- NEW ---
 // Interface for the Ticket Model (static methods)
 export interface ITicketModel extends Model<ITicket> {
   generateTicket(length?: number): string;
 }
-// --- END NEW ---
 
 const TicketSchema: Schema = new Schema({
   election: { type: Schema.Types.ObjectId, ref: 'Election', required: true },
@@ -24,18 +21,16 @@ const TicketSchema: Schema = new Schema({
   ticketString: { type: String, required: true, unique: true },
   used: { type: Boolean, default: false },
   expiresAt: { type: Date, required: true },
-  email: { type: String, required: true, lowercase: true },
-});
+}, { timestamps: true });
 
 TicketSchema.index({ election: 1, student: 1 }, { unique: true });
 
 // Helper to generate a random ticket string
-TicketSchema.statics.generateTicket = (length = 10): string => { // Add return type
+TicketSchema.statics.generateTicket = (length = 10): string => {
   return crypto.randomBytes(Math.ceil(length / 2))
     .toString('hex')
     .slice(0, length)
     .toUpperCase();
 };
 
-// Export using the new Model interface
 export default mongoose.model<ITicket, ITicketModel>('Ticket', TicketSchema);

@@ -35,7 +35,7 @@ const TeacherDashboard: React.FC<TeacherDashboardProps> = ({ elections, onSelect
       </motion.header>
 
       <motion.section initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}>
-        <div className="bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-8">
+        <div className="bg-white/4 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl p-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-white">Active Elections</h2>
             <div className="h-[1px] flex-1 ml-6 bg-white/10" />

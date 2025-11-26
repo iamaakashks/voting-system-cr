@@ -7,9 +7,9 @@ import Layout from './layout/Layout';
 import ProtectedRoute from './layout/ProtectedRoute';
 import Dashboard from './Dashboard';
 import ElectionDetailPage from '../pages/ElectionDetailPage';
-import StudentLogin from './StudentLoginNew';
+import StudentLogin from './StudentLogin';
 import TeacherLogin from './TeacherLogin';
-import LandingPage from './LandingPage';
+import LandingPage from './LandingPageProfessional';
 import CreateElectionForm from './CreateElectionForm';
 import Spinner from './Spinner';
 
@@ -19,6 +19,7 @@ import {
   createElection,
   LoginCredentials
 } from '../services/api';
+import { connectSocket, disconnectSocket, onElectionStarted, onElectionEnded, onElectionCreated, onElectionStopped } from '../services/socket';
 
 import { Election, User } from '../types';
 
@@ -82,34 +83,91 @@ const AppContent: React.FC = () => {
       // User is logged out, clear local data
       setElections([]);
     }
-  }, [currentUser, fetchStudentData, fetchTeacherData, navigate, location.pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser, navigate, location.pathname]);
+
+  // Effect for handling real-time updates - MUST run only once per login session
+  useEffect(() => {
+    if (!currentUser) return;
+    
+    console.log('✓ Setting up socket connection for real-time updates...');
+    connectSocket();
+
+    const handleUpdate = () => {
+      console.log("✓ Election event received, refetching elections list...");
+      if (currentUser.role === 'student') {
+        getElectionsForUser().then(data => {
+          console.log('✓ Student elections updated:', data.length);
+          setElections(data);
+        }).catch(err => console.error('Error fetching elections:', err));
+      } else if (currentUser.role === 'teacher') {
+        getElectionsForTeacher().then(data => {
+          console.log('✓ Teacher elections updated:', data.length);
+          setElections(data);
+        }).catch(err => console.error('Error fetching elections:', err));
+      }
+    };
+
+    onElectionStarted(handleUpdate);
+    onElectionEnded(handleUpdate);
+    onElectionCreated(handleUpdate); // Real-time: New election created
+    onElectionStopped(handleUpdate); // Real-time: Election stopped
+
+    return () => {
+      console.log('⚠ Cleaning up socket connection on logout...');
+      disconnectSocket();
+    };
+    // Only depend on currentUser.id to avoid re-running on every state change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentUser?.id]);
+
+  const loadElections = useCallback(async () => {
+    if (currentUser) {
+      try {
+        let electionsData: Election[] = [];
+        if (currentUser.role === 'student') {
+          electionsData = await getElectionsForUser();
+        } else if (currentUser.role === 'teacher') {
+          electionsData = await getElectionsForTeacher();
+        }
+        setElections(electionsData);
+      } catch (error) {
+        console.error('Error fetching elections:', error);
+        showNotification('Failed to load elections.', 'error');
+      }
+    }
+  }, [currentUser, showNotification]);
 
   useEffect(() => {
-    if (socket) {
-      socket.on('new-election', (newElection: Election) => {
-        if (currentUser && currentUser.role === 'student' && newElection.branch === currentUser.branch && newElection.section === currentUser.section) {
-          setElections((prevElections) => [newElection, ...prevElections]);
-          showNotification(`A new election has been created: ${newElection.title}`, 'success');
-        } else if (currentUser && currentUser.role === 'teacher') {
-          setElections((prevElections) => [newElection, ...prevElections]);
-          showNotification(`A new election has been created: ${newElection.title}`, 'success');
-        }
+    if (socket && currentUser) {
+      // Listen for new election created
+      socket.on('election:created', (data: { electionId: string, title: string }) => {
+        console.log('New election created:', data);
+        // Refresh elections list
+        loadElections();
+        showNotification(`A new election has been created: ${data.title}`, 'success');
       });
 
-      socket.on('election-stopped', (data: { electionId: string, election: Election }) => {
-        setElections((prevElections) =>
-          prevElections.map((election) =>
-            election.id === data.electionId ? data.election : election
-          )
-        );
+      // Listen for election stopped
+      socket.on('election:stopped', (data: { electionId: string }) => {
+        console.log('Election stopped:', data);
+        // Refresh elections list
+        loadElections();
+      });
+
+      // Listen for results updated (when vote is cast)
+      socket.on('election:results:updated', (data: { electionId: string }) => {
+        console.log('Election results updated:', data);
+        // This will be handled by ElectionDetailPage component if it's open
       });
 
       return () => {
-        socket.off('new-election');
-        socket.off('election-stopped');
+        socket.off('election:created');
+        socket.off('election:stopped');
+        socket.off('election:results:updated');
       };
     }
-  }, [socket, currentUser, showNotification]);
+  }, [socket, currentUser, showNotification, loadElections]);
 
   const handleLogin = async (credentials: LoginCredentials) => {
     try {
@@ -147,13 +205,13 @@ const AppContent: React.FC = () => {
 
   return (
     <Routes>
-      <Route path="/" element={<Layout />}>
-        {/* Public Routes */}
-        <Route index element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage onNavigateToLogin={() => navigate('/')} onStudentLogin={() => navigate('/login/student')} onTeacherLogin={() => navigate('/login/teacher')} />} />
-        <Route path="login/student" element={currentUser ? <Navigate to="/dashboard" /> : <StudentLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
-        <Route path="login/teacher" element={currentUser ? <Navigate to="/dashboard" /> : <TeacherLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
+      {/* Public Routes - No Layout (no header/footer) */}
+      <Route index element={currentUser ? <Navigate to="/dashboard" /> : <LandingPage onNavigateToLogin={() => navigate('/')} onStudentLogin={() => navigate('/login/student')} onTeacherLogin={() => navigate('/login/teacher')} />} />
+      <Route path="login/student" element={currentUser ? <Navigate to="/dashboard" /> : <StudentLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
+      <Route path="login/teacher" element={currentUser ? <Navigate to="/dashboard" /> : <TeacherLogin onLogin={handleLogin} onBack={() => navigate('/')} />} />
 
-        {/* Protected Routes */}
+      {/* Protected Routes - With Layout (header/footer) */}
+      <Route path="/" element={<Layout />}>
         <Route element={<ProtectedRoute />}>
           <Route path="dashboard" element={<Dashboard elections={elections} onCreateNew={() => navigate('/elections/create')} />} />
           <Route path="elections/create" element={<CreateElectionForm onSubmit={handleCreateElection} onCancel={() => navigate('/dashboard')} />} />

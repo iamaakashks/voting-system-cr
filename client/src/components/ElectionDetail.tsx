@@ -7,14 +7,16 @@
 import React, { useState, useEffect } from "react";
 import { Election, Candidate, User } from "../types";
 import ResultsChart from "./ResultsChart";
+import ResultsTable from "./ResultsTable";
 import VotingTimelineChart from "./VotingTimelineChart";
 import VoterTurnoutAnalytics from "./VoterTurnoutAnalytics";
-import GenderVoteChart from "./GenderVoteChart";
+import PrintableReport from "./PrintableReport";
 import {
   requestVotingTicket,
   getElectionTimeline,
   getElectionTurnout,
-  getElectionGenderStats,
+  getElectionParticipants,
+  Participant,
 } from "../services/api";
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -210,15 +212,25 @@ const VoteModal: React.FC<{
 }> = ({ isOpen, onClose, onSubmit, candidateName, userEmail }) => {
   const [ticket, setTicket] = useState("");
   const [email, setEmail] = useState(userEmail || "");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (userEmail) setEmail(userEmail);
   }, [userEmail]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (ticket.trim() && email.trim()) {
-      onSubmit(ticket.trim().toUpperCase(), email.trim());
+    if (ticket.trim() && !isSubmitting) {
+      setIsSubmitting(true);
+      try {
+        onSubmit(ticket.trim().toUpperCase(), email);
+        setTicket(''); // Clear ticket after successful submission
+        onClose(); // Close modal after submission
+      } catch (error) {
+        // Error is handled by parent component
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -449,9 +461,9 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
 
   const [timelineData, setTimelineData] = useState<any[]>([]);
   const [turnoutData, setTurnoutData] = useState<any | null>(null);
-  const [genderStats, setGenderStats] = useState<any | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [isDownloadingCsv, setIsDownloadingCsv] = useState(false);
 
   const buttonState = getButtonState(election, user);
   const { timeLeft, label } = useCountdown(election.startTime, election.endTime);
@@ -467,15 +479,13 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
     const fetchStatistics = async () => {
       setLoadingStats(true);
       try {
-        const [timeline, turnout, gender] = await Promise.all([
+        const [timeline, turnout] = await Promise.all([
           getElectionTimeline(election.id),
           getElectionTurnout(election.id),
-          getElectionGenderStats(election.id),
         ]);
         if (!mounted) return;
         setTimelineData(timeline);
         setTurnoutData(turnout);
-        setGenderStats(gender);
       } catch (err) {
         console.error("Error fetching statistics:", err);
       } finally {
@@ -486,7 +496,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
     return () => {
       mounted = false;
     };
-  }, [showResults, election.id, election.results]);
+  }, [showResults, election.id, election.results, election.totalVotes]);
 
   // Voting flow handlers (identical logic)
   const handleInitiateVote = async (candidateId: string) => {
@@ -516,42 +526,104 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
     setTicketError(null);
   };
   
-  const handleDownload = () => {
+  const handleDownload = async () => {
     setIsDownloadingPdf(true);
-    const input = document.getElementById('results-analytics');
-    if (input) {
-      input.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      setTimeout(() => {
-        html2canvas(input, {
+    
+    try {
+      // Get all sections
+      const sections = [
+        { id: 'pdf-section-header', name: 'Header' },
+        { id: 'pdf-section-table', name: 'Results Table' },
+        { id: 'pdf-section-pie', name: 'Pie Chart' },
+        { id: 'pdf-section-timeline', name: 'Timeline' },
+        { id: 'pdf-section-turnout', name: 'Turnout' },
+      ];
+
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const margin = 10;
+      let currentY = margin;
+      let isFirstPage = true;
+
+      for (const section of sections) {
+        const element = document.getElementById(section.id);
+        if (!element) continue;
+
+        // Capture section as image
+        const canvas = await html2canvas(element, {
           useCORS: true,
           scale: 2,
-          backgroundColor: '#0B0E14',
-          windowWidth: document.documentElement.offsetWidth,
-          windowHeight: document.documentElement.offsetHeight,
-        }).then((canvas) => {
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF('p', 'mm', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          let position = 0;
-          let heightLeft = pdfHeight;
-          while (heightLeft >= 0) {
-            position = heightLeft - pdfHeight;
-            pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, pdfHeight);
-            heightLeft -= pdf.internal.pageSize.getHeight();
-            if (heightLeft > 0) {
-              pdf.addPage();
-            }
-          }
-          pdf.save(`${election.title.replace(/ /g, '_')}_results.pdf`);
-          setIsDownloadingPdf(false);
-        }).catch(err => {
-          console.error("Error generating PDF:", err);
-          setIsDownloadingPdf(false);
+          backgroundColor: '#FFFFFF',
+          logging: false,
         });
-      }, 500);
-    } else {
+
+        const imgData = canvas.toDataURL('image/png');
+        const imgWidth = pageWidth - 2 * margin;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        // Check if we need a new page
+        if (!isFirstPage && currentY + imgHeight > pageHeight - margin) {
+          pdf.addPage();
+          currentY = margin;
+        }
+
+        // Add image to PDF
+        pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
+        currentY += imgHeight + 5; // Add 5mm spacing between sections
+
+        isFirstPage = false;
+
+        // If this section is too tall and we're near the bottom, start fresh on next page
+        if (currentY > pageHeight - 40) {
+          pdf.addPage();
+          currentY = margin;
+        }
+      }
+
+      pdf.save(`${election.title.replace(/ /g, '_')}_results.pdf`);
+    } catch (err) {
+      console.error("Error generating PDF:", err);
+    } finally {
       setIsDownloadingPdf(false);
+    }
+  };
+
+  const handleDownloadCSV = async () => {
+    setIsDownloadingCsv(true);
+    try {
+      const participants = await getElectionParticipants(election.id);
+      
+      // Create CSV content
+      const headers = ['Name', 'USN', 'Email', 'Branch', 'Section', 'Admission Year', 'Voted At'];
+      const csvRows = [
+        headers.join(','),
+        ...participants.map(p => [
+          `"${p.name}"`,
+          p.usn,
+          p.email,
+          p.branch,
+          p.section,
+          p.admissionYear,
+          new Date(p.votedAt).toLocaleString()
+        ].join(','))
+      ];
+      
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `${election.title.replace(/ /g, '_')}_participants.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (err) {
+      console.error('Error downloading CSV:', err);
+    } finally {
+      setIsDownloadingCsv(false);
     }
   };
   
@@ -585,87 +657,147 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
 
       {/* Header */}
       <h2 className="text-4xl font-extrabold text-center text-white">{election.title}</h2>
-      {election.description && <p className="text-center text-gray-400">{election.description}</p>}
-
-      {/* Timer */}
-      <div className="flex justify-center">
-        <div
-          className="
-            p-4 rounded-lg bg-gray-900 text-center border border-[#4deeea55]
-            shadow-[0_0_14px_#4deeea33]
-            hover:shadow-[0_0_20px_#a86aff55]
-            transition-all
-          "
-        >
-          <p className="text-gray-300">{label}</p>
-          <p className="text-3xl font-bold text-white font-mono tracking-widest">{timeLeft}</p>
-        </div>
-      </div>
-
-      {/* Teacher Stop */}
-      {user?.role === "teacher" && isElectionLive && (
-        <div className="text-center">
-          <button
-            onClick={() => onStopElection(election.id)}
-            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-all hover:shadow-[0_0_14px_#ff4d4d77]"
-          >
-            Stop Election Now
-          </button>
-        </div>
-      )}
-
-      {/* Candidates title */}
-      <h3 className="text-2xl font-bold text-center">Candidates</h3>
-
-      {/* Voting / Thanks / Closed states will be rendered below */}
-      {election.userVoted && user?.role !== "teacher" ? (
-        <ThanksForVoting />
-      ) : isElectionOver ? (
-        <div className="text-center py-12">
-          <h4 className="text-2xl font-bold text-white mb-2">Voting is Closed</h4>
-          <p className="text-gray-400">The voting period has ended.</p>
+      {/* Hide everything for students until election starts */}
+      {buttonState.label === "Not Started" && user?.role === "student" ? (
+        // Show only countdown for students when election hasn't started
+        <div className="text-center py-20">
+          <div className="inline-block bg-gradient-to-br from-[#4deeea]/20 to-[#a86aff]/20 backdrop-blur-lg p-12 rounded-2xl border border-[#4deeea]/30 shadow-[0_0_30px_#4deeea44]">
+            <h2 className="text-3xl font-bold text-white mb-6">{election.title}</h2>
+            {election.description && <p className="text-gray-300 mb-8">{election.description}</p>}
+            <p className="text-xl text-gray-300 mb-4">Election starts in</p>
+            <p className="text-5xl font-bold text-[#4deeea] font-mono tracking-wider">{timeLeft}</p>
+            <p className="text-sm text-gray-400 mt-8">You can view candidates and cast your vote once the election begins</p>
+          </div>
         </div>
       ) : (
         <>
-          {/* Candidate Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            {election.candidates.map((candidate) => (
-              <CandidateCard
-                key={candidate.id}
-                candidate={candidate}
-                onInitiateVote={handleInitiateVote}
-                buttonState={buttonState}
-                userRole={user?.role}
-                isElectionOver={isElectionOver}
-              />
-            ))}
+          {election.description && <p className="text-center text-gray-400">{election.description}</p>}
+
+          {/* Timer */}
+          <div className="flex justify-center">
+            <div
+              className="
+                p-4 rounded-lg bg-gray-900 text-center border border-[#4deeea55]
+                shadow-[0_0_14px_#4deeea33]
+                hover:shadow-[0_0_20px_#a86aff55]
+                transition-all
+              "
+            >
+              <p className="text-gray-300">{label}</p>
+              <p className="text-3xl font-bold text-white font-mono tracking-widest">{timeLeft}</p>
+            </div>
           </div>
 
-          {/* NOTA */}
-          {user?.role !== "teacher" && !isElectionOver && (
-            <div className="flex justify-center mt-8">
-              <NotaCard onClick={() => handleInitiateVote("NOTA")} buttonState={buttonState} />
+          {/* Teacher Stop */}
+          {user?.role === "teacher" && isElectionLive && (
+            <div className="text-center">
+              <button
+                onClick={() => onStopElection(election.id)}
+                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-all hover:shadow-[0_0_14px_#ff4d4d77]"
+              >
+                Stop Election Now
+              </button>
             </div>
+          )}
+          
+          <h3 className="text-2xl font-bold text-center">Candidates</h3>
+
+          {/* Voting / Thanks / Closed states will be rendered below */}
+          {election.userVoted && user?.role !== "teacher" ? (
+            <ThanksForVoting />
+          ) : isElectionOver ? (
+            <div className="text-center py-12">
+              <h4 className="text-2xl font-bold text-white mb-2">Voting is Closed</h4>
+              <p className="text-gray-400">The voting period has ended.</p>
+            </div>
+          ) : (
+            <>
+              {/* Candidate Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
+                {election.candidates.map((candidate) => (
+                  <CandidateCard
+                    key={candidate.id}
+                    candidate={candidate}
+                    onInitiateVote={handleInitiateVote}
+                    buttonState={buttonState}
+                    userRole={user?.role}
+                    isElectionOver={isElectionOver}
+                  />
+                ))}
+              </div>
+
+              {/* NOTA */}
+              {user?.role !== "teacher" && !isElectionOver && (
+                <div className="flex justify-center mt-8">
+                  <NotaCard onClick={() => handleInitiateVote("NOTA")} buttonState={buttonState} />
+                </div>
+              )}
+            </>
           )}
         </>
       )}
   {/* ===========================
       RESULTS & ANALYTICS
       =========================== */}
-    <div id="results-analytics">
-      <h3 className="text-2xl font-bold text-center mt-12">
-        {showResults
-          ? isElectionOver
-            ? "Final Results"
-            : "Live Results"
-          : "Results Hidden"}
-      </h3>
+    <div id="results-analytics" className="relative">
+      <div className="flex justify-between items-center mt-12 mb-4">
+        <h3 className="text-2xl font-bold">
+          {showResults
+            ? isElectionOver
+              ? "Final Results"
+              : "Live Results"
+            : "Results Hidden"}
+        </h3>
+        
+        {/* Download Buttons - Only for Teachers when election is completed */}
+        {showResults && user?.role === 'teacher' && isElectionOver && (
+          <div className="flex gap-3">
+            <button
+              onClick={handleDownloadCSV}
+              disabled={isDownloadingCsv}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
+            >
+              {isDownloadingCsv ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download Participants CSV
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleDownload}
+              disabled={isDownloadingPdf}
+              className="px-4 py-2 bg-[#4deeea] text-black rounded-lg font-semibold hover:bg-[#3dddd9] disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
+            >
+              {isDownloadingPdf ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                  Downloading...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Download Results PDF
+                </>
+              )}
+            </button>
+          </div>
+        )}
+      </div>
   
       <div
         className="
           bg-gray-900 p-6 rounded-xl shadow-xl
           border border-[#4deeea33]
-          mt-4
           hover:shadow-[0_0_20px_#4deeea55]
           transition-all
         "
@@ -711,13 +843,27 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
             })()}
 
             {/* ===========================
+                RESULTS TABLE
+                =========================== */}
+            <div className="mt-8 bg-gray-900 p-6 rounded-xl shadow-xl border border-[#4deeea33]">
+              <ResultsTable
+                candidates={election.candidates}
+                results={election.results}
+                notaVotes={election.notaVotes || 0}
+                theme="dark"
+              />
+            </div>
+
+            {/* ===========================
                 MAIN RESULTS CHART
                 =========================== */}
-            <ResultsChart
-              candidates={election.candidates}
-              results={election.results}
-              notaVotes={election.notaVotes || 0}
-            />
+            <div className="mt-8">
+              <ResultsChart
+                candidates={election.candidates}
+                results={election.results}
+                notaVotes={election.notaVotes || 0}
+              />
+            </div>
 
             {/* ===========================
                 LOADING ANALYTICS
@@ -761,21 +907,6 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                   </div>
                 )}
 
-                {/* ===========================
-                    GENDER VOTING SPLIT
-                    =========================== */}
-                {genderStats && (
-                  <div
-                    className="
-                      mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
-                      border border-[#4deeea33]
-                      hover:shadow-[0_0_20px_#4deeea55]
-                      transition-all
-                    "
-                  >
-                    <GenderVoteChart data={genderStats} />
-                  </div>
-                )}
               </>
             )}
           </>
@@ -787,17 +918,17 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
           </div>
         )}
       </div>
-      {isElectionOver && (
-        <div className="text-center mt-8">
-          <button
-            onClick={handleDownload}
-            disabled={isDownloadingPdf}
-            className="px-6 py-2 bg-white text-black rounded-md font-semibold hover:bg-gray-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {isDownloadingPdf ? 'Downloading...' : 'Download Results'}
-          </button>
+
+      {/* Hidden PrintableReport for PDF generation */}
+      <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
+        <div id="printable-report">
+          <PrintableReport 
+            election={election}
+            timelineData={timelineData}
+            turnoutData={turnoutData}
+          />
         </div>
-      )}
+      </div>
       </div>
     </div>
   );

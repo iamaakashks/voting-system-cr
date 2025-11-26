@@ -75,7 +75,6 @@ router.post('/request', protect, async (req: AuthRequest, res: Response) => {
       ticketString,
       used: false,
       expiresAt,
-      email: student.email.toLowerCase()
     });
 
     await newTicket.save();

@@ -6,6 +6,7 @@ import App from './components/App';
 import { AuthProvider } from './contexts/AuthContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { TransactionProvider } from './contexts/TransactionContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -16,13 +17,15 @@ const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
+      <ThemeProvider>
         <NotificationProvider>
-          <TransactionProvider>
-            <App />
-          </TransactionProvider>
+          <AuthProvider>
+            <TransactionProvider>
+              <App />
+            </TransactionProvider>
+          </AuthProvider>
         </NotificationProvider>
-      </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

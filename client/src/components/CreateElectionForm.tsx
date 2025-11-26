@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import AsyncSelect from 'react-select/async';
 import { searchStudents } from '../services/api';
 import { motion } from 'framer-motion';
+import { useTheme } from '../contexts/ThemeContext';
+import { ArrowLeft, Calendar, Users, FileText, Clock, Info, Send } from 'lucide-react';
 
 interface CreateElectionData {
   title: string;
@@ -27,6 +29,7 @@ type CandidateOption = {
 };
 
 const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCancel }) => {
+  const { theme } = useTheme();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [branch, setBranch] = useState('cs');
@@ -53,6 +56,12 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Prevent multiple submissions
+    if (isSubmitting) {
+      return;
+    }
+    
     if (candidates.length < 2) {
       alert('Please select at least two candidates.');
       return;
@@ -76,6 +85,8 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
         endTime: endDate.toISOString(),
         candidates: candidates.map(c => ({ id: c.value, name: c.name, usn: c.usn })),
       });
+    } catch (error) {
+      // Error is handled by parent, but we need to re-enable button
     } finally {
       setIsSubmitting(false);
     }
@@ -180,3 +191,4 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
 };
 
 export default CreateElectionForm;
+

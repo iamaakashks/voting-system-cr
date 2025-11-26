@@ -9,6 +9,7 @@ import mongoose from 'mongoose';
 import { sendNewElectionNotification, sendWinnerNotification } from '../utils/emailService';
 import { enrichCandidatesWithProfilePictures } from '../utils/electionUtils';
 import { ITeacher } from '../models/Teacher';
+import { io } from '../index';
 
 const router = express.Router();
 
@@ -27,10 +28,10 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
   const { title, description, branch, section, admissionYear, startTime, endTime, candidates } = req.body;
 
   try {
-    const existingElection = await Election.findOne({ title, createdBy: req.user.id });
-    if (existingElection) {
-      return res.status(409).json({ message: 'An election with this title already exists.' });
-    }
+    const now = new Date();
+    const parsedStartTime = new Date(startTime);
+    
+    const initialStatus = parsedStartTime <= now ? 'Ongoing' : 'Pending';
 
     const newElection = new Election({
       title,
@@ -38,9 +39,10 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       branch,
       section,
       admissionYear,
-      startTime,
+      startTime: parsedStartTime,
       endTime,
       createdBy: req.user.id,
+      status: initialStatus,
       candidates: candidates.map((c: any) => ({
         student: c.id,
         name: c.name,
@@ -48,12 +50,23 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
       }))
     });
     await newElection.save();
-
-    // Emit a WebSocket event
-    const { getIO } = await import('../socket');
-    getIO().emit('new-election', newElection);
     
-    // Send email notification to students
+    // Broadcast election creation to all clients in real-time
+    io.emit('election:created', {
+      election: {
+        id: (newElection._id as any).toString(),
+        title: newElection.title,
+        description: newElection.description,
+        startTime: newElection.startTime,
+        endTime: newElection.endTime,
+        branch: newElection.branch,
+        section: newElection.section,
+        status: newElection.status,
+        admissionYear: newElection.admissionYear
+      }
+    });
+    console.log(`✓ Election created and broadcasted: ${newElection.title}`);
+    
     if (candidates && candidates.length > 0) {
       const students = await Student.find({ branch, section, admissionYear });
       const studentEmails = students.map(student => student.email);
@@ -96,11 +109,9 @@ router.get('/student', protect, async (req: AuthRequest, res: Response) => {
       { $sort: { startTime: -1 } },
       { $lookup: { from: 'tickets', let: { electionId: '$_id' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$election', '$$electionId'] }, { $eq: ['$student', studentId] }, ], }, }, }, ], as: 'ticket', }, },
       { $unwind: { path: '$ticket', preserveNullAndEmptyArrays: true } },
-      { $lookup: { from: 'transactions', let: { electionId: '$_id' }, pipeline: [ { $match: { $expr: { $and: [ { $eq: ['$election', '$$electionId'] }, { $eq: ['$student', studentId] }, ], }, }, }, { $sort: { timestamp: -1 } }, { $limit: 1 }, ], as: 'transaction', }, },
-      { $unwind: { path: '$transaction', preserveNullAndEmptyArrays: true } },
       { $lookup: { from: 'teachers', localField: 'createdBy', foreignField: '_id', as: 'createdBy', }, },
       { $unwind: { path: '$createdBy', preserveNullAndEmptyArrays: true } },
-      { $project: { _id: 1, title: 1, description: 1, branch: 1, section: 1, startTime: 1, endTime: 1, candidates: 1, notaVotes: 1, createdBy: { name: '$createdBy.name' }, userVoted: { $ifNull: ['$ticket.used', false] }, userVoteTxHash: '$transaction.txHash', userTicket: { $cond: { if: { $and: [ '$ticket', { $eq: ['$ticket.used', false] }, { $lt: [new Date(), '$endTime'] }, { $gt: [new Date(), '$startTime'] }, ], }, then: '$ticket.ticketString', else: '$$REMOVE', }, }, }, },
+      { $project: { _id: 1, title: 1, description: 1, branch: 1, section: 1, startTime: 1, endTime: 1, candidates: 1, notaVotes: 1, createdBy: { name: '$createdBy.name' }, userVoted: { $ifNull: ['$ticket.used', false] }, userTicket: { $cond: { if: { $and: [ '$ticket', { $eq: ['$ticket.used', false] }, { $lt: [new Date(), '$endTime'] }, { $gt: [new Date(), '$startTime'] }, ], }, then: '$ticket.ticketString', else: '$$REMOVE', }, }, }, },
     ]);
 
     const electionsWithDetails = await Promise.all(
@@ -187,7 +198,7 @@ router.get('/:id/timeline', protect, async (req: AuthRequest, res: Response) => 
       return res.status(404).json({ message: 'Election not found' });
     }
 
-    const transactions = await Transaction.find({ election: election._id }).sort({ timestamp: 1 }).populate('student', 'gender');
+    const transactions = await Transaction.find({ election: election._id }).sort({ timestamp: 1 });
 
     const timelineData: { [key: string]: number } = {};
     const startTime = new Date(election.startTime);
@@ -252,7 +263,8 @@ router.get('/:id/turnout', protect, async (req: AuthRequest, res: Response) => {
 
     const eligibleVoters = await Student.countDocuments({
       branch: election.branch,
-      section: election.section
+      section: election.section,
+      admissionYear: election.admissionYear
     });
 
     const totalVotes = await Transaction.countDocuments({ election: election._id });
@@ -292,62 +304,6 @@ router.get('/:id/turnout', protect, async (req: AuthRequest, res: Response) => {
   }
 });
 
-// @route   GET api/elections/:id/gender-stats
-// @desc    Get gender-based vote statistics
-// @access  Private
-router.get('/:id/gender-stats', protect, async (req: AuthRequest, res: Response) => {
-  try {
-    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
-      return res.status(400).json({ message: 'Invalid Election ID' });
-    }
-
-    const election = await Election.findById(req.params.id);
-    if (!election) {
-      return res.status(404).json({ message: 'Election not found' });
-    }
-
-    const transactions = await Transaction.find({ election: election._id });
-    const studentIds = [...new Set(transactions.map(tx => tx.student.toString()))];
-    const students: IStudent[] = await Student.find({ _id: { $in: studentIds } }).select('gender');
-    const studentGenderMap = new Map(students.map((s: IStudent) => [s._id.toString(), s.gender]));
-    const genderStats: { [candidateId: string]: { male: number; female: number } } = {};
-
-    election.candidates.forEach(candidate => {
-      genderStats[candidate.student.toString()] = { male: 0, female: 0 };
-    });
-    genderStats['NOTA'] = { male: 0, female: 0 };
-
-    for (const tx of transactions) {
-      const gender = studentGenderMap.get(tx.student.toString()) as 'male' | 'female';
-      if (!gender) continue;
-
-      if (tx.candidateId && tx.candidateId !== 'NOTA') {
-        const candidateId = tx.candidateId.toString();
-        if (genderStats[candidateId]) {
-          genderStats[candidateId][gender]++;
-        }
-      } else {
-        genderStats['NOTA'][gender]++;
-      }
-    }
-
-    res.json({
-      candidates: election.candidates.map(c => ({
-        candidateId: c.student.toString(),
-        candidateName: c.name,
-        maleVotes: genderStats[c.student.toString()]?.male || 0,
-        femaleVotes: genderStats[c.student.toString()]?.female || 0
-      })),
-      nota: {
-        maleVotes: genderStats['NOTA']?.male || 0,
-        femaleVotes: genderStats['NOTA']?.female || 0
-      }
-    });
-  } catch (err: any) {
-    res.status(500).json({ message: 'Server Error: ' + err.message });
-  }
-});
-
 // @route   GET api/elections/:id
 // @desc    Get a single election by ID
 // @access  Private
@@ -368,9 +324,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
         election: election._id,
         student: req.user.id,
       });
-    }
 
-    if (req.user?.role === 'student') {
       const result = await findStudentModelById(req.user.id);
       if (!result) {
         return res.status(404).json({ message: 'Student not found' });
@@ -379,6 +333,7 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
       if (student?.branch !== election.branch || student?.section !== election.section) {
         return res.status(403).json({ message: 'Not authorized for this election' });
       }
+
     } else if (req.user?.role === 'teacher') {
       const createdByTeacher = election.createdBy as any;
 
@@ -398,22 +353,10 @@ router.get('/:id', protect, async (req: AuthRequest, res: Response) => {
       results['NOTA'] = election.notaVotes;
     }
 
-    let userVoteTxHash = undefined;
-    if (userTicket && userTicket.used && req.user?.role === 'student') {
-      const transaction = await Transaction.findOne({
-        election: election._id,
-        student: req.user.id
-      }).sort({ timestamp: -1 });
-      if (transaction) {
-        userVoteTxHash = transaction.txHash;
-      }
-    }
-
     res.json({
       ...election.toObject(),
       id: election._id,
       userVoted: userTicket ? userTicket.used : false,
-      userVoteTxHash: userVoteTxHash,
       userTicket: (userTicket && !userTicket.used && new Date() < election.endTime && new Date() > election.startTime) ? userTicket.ticketString : undefined,
       candidates: remappedCandidates,
       results: results,
@@ -445,15 +388,12 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
       return res.status(404).json({ message: 'Election not found or you are not the creator' });
     }
 
-    const { getIO } = await import('../socket');
-    const results = election.candidates.reduce((acc, c) => {
-      acc[c.student.toString()] = c.votes;
-      return acc;
-    }, {} as { [candidateId: string]: number });
-    if (election.notaVotes) {
-      results['NOTA'] = election.notaVotes;
-    }
-    getIO().emit('election-stopped', { electionId: election._id, election: { ...election.toObject(), results } });
+    // Broadcast election stop to all clients in real-time
+    io.emit('election:stopped', {
+      electionId: req.params.id,
+      stoppedAt: new Date().toISOString()
+    });
+    console.log(`✓ Election manually stopped and broadcasted: ${req.params.id}`);
 
     const fullElection = await Election.findById(election._id).populate('createdBy', 'name');
     if (fullElection) {
@@ -470,7 +410,6 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
       const winners = fullElection.candidates.filter(c => results[c.student.toString()] === maxVotes);
 
       if (winners.length > 0) {
-        // N+1 Query Fix: Fetch all winning students in one go
         const winnerStudentIds = winners.map(w => w.student.toString());
         const winnerStudents = await Student.find({ _id: { $in: winnerStudentIds } });
         
@@ -508,6 +447,104 @@ router.post('/:id/stop', protect, async (req: AuthRequest, res: Response) => {
     } else {
       res.json(election);
     }
+
+  } catch (err: any) {
+    res.status(500).json({ message: 'Server Error: ' + err.message });
+  }
+});
+
+// @route   GET api/elections/:id/participants
+// @desc    Get list of all participants (voters) in an election with details
+// @access  Private (Teacher only)
+router.get('/:id/participants', protect, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'teacher') {
+    return res.status(403).json({ message: 'Not authorized - Teachers only' });
+  }
+
+  try {
+    const election = await Election.findById(req.params.id);
+    if (!election) {
+      return res.status(404).json({ message: 'Election not found' });
+    }
+
+    // Ensure only the creator can access
+    if (election.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You are not authorized to view participants for this election.' });
+    }
+
+    // Get all used tickets for this election with student details
+    const usedTickets = await Ticket.find({ 
+      election: req.params.id, 
+      used: true 
+    }).populate('student', 'name usn email branch section admissionYear').lean();
+
+    const participants = usedTickets.map((ticket: any) => ({
+      name: ticket.student.name,
+      usn: ticket.student.usn,
+      email: ticket.student.email,
+      branch: ticket.student.branch,
+      section: ticket.student.section,
+      admissionYear: ticket.student.admissionYear,
+      votedAt: ticket.updatedAt,
+    }));
+
+    res.json(participants);
+  } catch (err: any) {
+    console.error('Error fetching participants:', err);
+    res.status(500).json({ message: 'Server Error: ' + err.message });
+  }
+});
+
+// @route   GET api/elections/:id/participation
+// @desc    Get voter participation lists (voted vs. did not vote)
+// @access  Private (Teacher)
+router.get('/:id/participation', protect, async (req: AuthRequest, res: Response) => {
+  if (req.user?.role !== 'teacher') {
+    return res.status(403).json({ message: 'Not authorized' });
+  }
+
+  try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ message: 'Invalid Election ID' });
+    }
+
+    const election = await Election.findById(req.params.id);
+    if (!election) {
+      return res.status(404).json({ message: 'Election not found' });
+    }
+
+    // Ensure only the creator can access this
+    if (election.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: 'You are not authorized to view participation for this election.' });
+    }
+
+    // 1. Get all eligible students
+    const eligibleStudents = await Student.find({
+      branch: election.branch,
+      section: election.section,
+      admissionYear: election.admissionYear
+    }).select('name usn').lean();
+
+    // 2. Get all used tickets for this election
+    const usedTickets = await Ticket.find({ election: election._id, used: true }).select('student').lean();
+    const votingStudentIds = new Set(usedTickets.map(t => t.student.toString()));
+
+    // 3. Separate students into two lists
+    const votedStudents: { name: string, usn: string }[] = [];
+    const didNotVoteStudents: { name: string, usn: string }[] = [];
+
+    for (const student of eligibleStudents) {
+      if (votingStudentIds.has(student._id.toString())) {
+        votedStudents.push({ name: student.name, usn: student.usn });
+      } else {
+        didNotVoteStudents.push({ name: student.name, usn: student.usn });
+      }
+    }
+
+    res.json({
+      votedStudents,
+      didNotVoteStudents
+    });
 
   } catch (err: any) {
     res.status(500).json({ message: 'Server Error: ' + err.message });

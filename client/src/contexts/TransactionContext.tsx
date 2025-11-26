@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useCallback, ReactNode, use
 import { Transaction } from '../types';
 import { getRecentTransactions } from '../services/api';
 import { useAuth } from './AuthContext';
+import { connectSocket, disconnectSocket, onNewVote } from '../services/socket';
 
 // Define the shape of the context
 interface TransactionContextType {
@@ -34,6 +35,18 @@ export const TransactionProvider: React.FC<TransactionProviderProps> = ({ childr
   useEffect(() => {
     if (currentUser) {
       fetchTransactions();
+      
+      // Connect to socket and listen for new votes
+      connectSocket();
+      
+      onNewVote(() => {
+        console.log('New vote detected, refreshing transaction feed...');
+        fetchTransactions();
+      });
+      
+      return () => {
+        disconnectSocket();
+      };
     } else {
       // Clear transactions when user logs out
       setTransactions([]);

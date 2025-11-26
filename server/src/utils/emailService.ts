@@ -1,20 +1,42 @@
-import sgMail from '@sendgrid/mail';
+import nodemailer from 'nodemailer';
 
-// Set SendGrid API Key
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+// Create Nodemailer transporter with Gmail SMTP
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || 'smtp.gmail.com',
+  port: parseInt(process.env.SMTP_PORT || '587'),
+  secure: false, // true for 465, false for other ports
+  auth: {
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+  },
+});
+
+// Verify SMTP connection
+if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  transporter.verify((error, success) => {
+    if (error) {
+      console.error('✗ SMTP connection error:', error.message);
+      console.warn('⚠ Email functionality may not work. Check your Gmail App Password.');
+    } else {
+      console.log('✓ SMTP server is ready to send emails (Gmail)');
+      console.log('✓ Email limit: 500 emails/day');
+    }
+  });
 } else {
-  console.warn('SENDGRID_API_KEY not found. Email functionality will not work.');
+  console.warn('⚠ SMTP_USER or SMTP_PASS not found. Email functionality will not work.');
 }
 
 export const sendVotingTicket = async (email: string, ticket: string, electionTitle: string) => {
-  if (!process.env.SENDGRID_API_KEY) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     throw new Error('Email service is not configured correctly.');
   }
 
-  const msg = {
+  const mailOptions = {
+    from: {
+      name: process.env.EMAIL_FROM_NAME || 'VeriVote System',
+      address: process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@verivote.com'
+    },
     to: email,
-    from: process.env.EMAIL_FROM || 'no-reply@verivote.com', // Use a verified sender
     subject: `Your Voting Ticket for ${electionTitle}`,
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -33,20 +55,17 @@ export const sendVotingTicket = async (email: string, ticket: string, electionTi
   };
 
   try {
-    await sgMail.send(msg);
-    console.log(`Voting ticket sent to ${email} via SendGrid`);
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Voting ticket sent to ${email} via Gmail SMTP`);
     return true;
   } catch (error: any) {
-    console.error('Error sending email with SendGrid:', error);
-    if (error.response) {
-      console.error(error.response.body)
-    }
+    console.error('✗ Error sending email with Gmail SMTP:', error.message);
     throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
   }
 };
 
 export const sendNewElectionNotification = async (emails: string[], electionTitle: string, startDate: Date, endDate: Date) => {
-  if (!process.env.SENDGRID_API_KEY) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     throw new Error('Email service is not configured correctly.');
   }
 
@@ -67,22 +86,22 @@ export const sendNewElectionNotification = async (emails: string[], electionTitl
     </div>
   `;
 
-  const msg = {
+  const mailOptions = {
+    from: {
+      name: process.env.EMAIL_FROM_NAME || 'VeriVote System',
+      address: process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@verivote.com'
+    },
     to: emails,
-    from: process.env.EMAIL_FROM || 'no-reply@verivote.com',
     subject,
     html,
   };
 
   try {
-    await sgMail.send(msg);
-    console.log(`New election notification sent to ${emails.length} students via SendGrid`);
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ New election notification sent to ${emails.length} students via Gmail SMTP`);
     return true;
   } catch (error: any) {
-    console.error('Error sending email with SendGrid:', error);
-    if (error.response) {
-      console.error(error.response.body)
-    }
+    console.error('✗ Error sending email with Gmail SMTP:', error.message);
     throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
   }
 };
@@ -93,7 +112,7 @@ export const sendWinnerNotification = async (
   isTie: boolean,
   otherWinners: string[]
 ) => {
-  if (!process.env.SENDGRID_API_KEY) {
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
     throw new Error('Email service is not configured correctly.');
   }
 
@@ -123,22 +142,22 @@ export const sendWinnerNotification = async (
     `;
   }
 
-  const msg = {
+  const mailOptions = {
+    from: {
+      name: process.env.EMAIL_FROM_NAME || 'VeriVote System',
+      address: process.env.EMAIL_FROM || process.env.SMTP_USER || 'no-reply@verivote.com'
+    },
     to: winnerEmails,
-    from: process.env.EMAIL_FROM || 'no-reply@verivote.com',
     subject,
     html,
   };
 
   try {
-    await sgMail.send(msg);
-    console.log(`Winner notification sent to ${winnerEmails.length} student(s) via SendGrid`);
+    await transporter.sendMail(mailOptions);
+    console.log(`✓ Winner notification sent to ${winnerEmails.length} student(s) via Gmail SMTP`);
     return true;
   } catch (error: any) {
-    console.error('Error sending email with SendGrid:', error);
-    if (error.response) {
-      console.error(error.response.body);
-    }
+    console.error('✗ Error sending email with Gmail SMTP:', error.message);
     throw new Error(`Failed to send email: ${error.message || 'Unknown error'}`);
   }
 };

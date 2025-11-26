@@ -10,19 +10,33 @@ const router = express.Router();
 // @access  Private
 router.get('/recent', protect, async (req: AuthRequest, res: Response) => {
     try {
-        // Return empty array initially - only show transactions when votes are cast
+        // Get recent transactions
         const transactions = await Transaction.find()
             .populate('election', 'title')
             .sort({ timestamp: -1 })
             .limit(10)
             .lean();
 
-        const transactionsWithDetails = transactions.map(tx => ({
-            txHash: tx.txHash,
-            electionTitle: tx.election ? (tx.election as any).title : 'Unknown Election',
-            timestamp: tx.timestamp.toISOString()
-        }));
+        console.log(`Fetched ${transactions.length} recent transactions`);
 
+        const transactionsWithDetails = transactions
+            .map(tx => {
+                // Handle both new (ballotHash) and old (txHash) documents for backward compatibility
+                const hash = (tx as any).ballotHash || (tx as any).txHash;
+                if (!hash) {
+                    console.warn('Transaction found without hash:', tx._id);
+                    return null;
+                }
+
+                return {
+                    ballotHash: hash,
+                    electionTitle: tx.election ? (tx.election as any).title : 'Unknown Election',
+                    timestamp: tx.timestamp.toISOString()
+                };
+            })
+            .filter(Boolean); // Remove any null entries
+
+        console.log(`Returning ${transactionsWithDetails.length} transactions with details`);
         res.json(transactionsWithDetails);
     } catch (err: any) {
         console.error('Error fetching transactions:', err);

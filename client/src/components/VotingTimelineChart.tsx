@@ -13,10 +13,21 @@ import { TimelineData } from '../services/api';
 
 interface VotingTimelineChartProps {
   data: TimelineData[];
+  theme?: 'light' | 'dark';
 }
 
-const VotingTimelineChart: React.FC<VotingTimelineChartProps> = ({ data }) => {
-  // Convert ISO timestamps to readable local time
+const VotingTimelineChart: React.FC<VotingTimelineChartProps> = ({ data, theme = 'dark' }) => {
+  const isLightTheme = theme === 'light';
+  
+  // Guard against undefined or empty data
+  if (!data || data.length === 0) {
+    return (
+      <div className="w-full text-center py-8">
+        <p className={isLightTheme ? "text-gray-600" : "text-gray-400"}>No timeline data available</p>
+      </div>
+    );
+  }
+  
   const chartData = data.map((item) => ({
     ...item,
     time: new Date(item.time).toLocaleTimeString('en-US', {
@@ -29,9 +40,15 @@ const VotingTimelineChart: React.FC<VotingTimelineChartProps> = ({ data }) => {
   const CustomTooltip: React.FC<any> = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-gray-800 p-3 border border-gray-700 rounded-lg shadow-lg">
-          <p className="text-white font-semibold">Time: {label}</p>
-          <p className="text-blue-300 text-sm">Votes: {payload[0].value}</p>
+        <div style={{
+          backgroundColor: isLightTheme ? '#ffffff' : '#1f2937',
+          padding: '0.75rem',
+          border: '1px solid',
+          borderColor: isLightTheme ? '#cccccc' : '#374151',
+          borderRadius: '0.5rem',
+        }}>
+          <p style={{ color: isLightTheme ? '#000000' : '#ffffff' }} className="font-semibold">Time: {label}</p>
+          <p style={{ color: isLightTheme ? '#3b82f6' : '#93c5fd' }} className="text-sm">Votes: {payload[0].value}</p>
         </div>
       );
     }
@@ -39,8 +56,8 @@ const VotingTimelineChart: React.FC<VotingTimelineChartProps> = ({ data }) => {
   };
 
   return (
-    <div className="w-full">
-      <h4 className="text-xl font-bold text-white mb-4 text-center">
+    <div style={{ backgroundColor: isLightTheme ? 'white' : 'transparent', padding: '1rem', width: '100%' }}>
+      <h4 className={`text-xl font-bold mb-4 text-center ${isLightTheme ? 'text-black' : 'text-white'}`}>
         Voting Timeline (Votes per Minute)
       </h4>
 
@@ -50,55 +67,41 @@ const VotingTimelineChart: React.FC<VotingTimelineChartProps> = ({ data }) => {
             data={chartData}
             margin={{ top: 20, right: 40, left: 10, bottom: 50 }}
           >
-            {/* Soft elegant grid */}
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.08)" />
+            <CartesianGrid strokeDasharray="3 3" stroke={isLightTheme ? "#dddddd" : "rgba(255,255,255,0.08)"} />
 
-            {/* X Axis */}
             <XAxis
               dataKey="time"
-              stroke="#8fa3c8"
-              tick={{ fill: '#b4c3da', fontSize: 12 }}
+              stroke={isLightTheme ? "#333333" : "#8fa3c8"}
+              tick={{ fill: isLightTheme ? '#000000' : '#b4c3da', fontSize: 12 }}
               angle={-35}
               textAnchor="end"
               height={70}
             />
 
-            {/* Y Axis */}
             <YAxis
-              stroke="#8fa3c8"
+              stroke={isLightTheme ? "#333333" : "#8fa3c8"}
               allowDecimals={false}
-              tick={{ fill: '#b4c3da', fontSize: 13 }}
+              tick={{ fill: isLightTheme ? '#000000' : '#b4c3da', fontSize: 13 }}
             />
 
             <Tooltip content={<CustomTooltip />} />
-            <Legend wrapperStyle={{ color: '#cbd5e1' }} />
+            <Legend wrapperStyle={{ color: isLightTheme ? '#000000' : '#cbd5e1' }} />
 
-            {/* Line Gradients */}
-            <defs>
-              <linearGradient id="votesGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#6ea8ff" stopOpacity={0.9} />
-                <stop offset="100%" stopColor="#3b82f6" stopOpacity={0.25} />
-              </linearGradient>
-            </defs>
-
-            {/* OPTIONAL: Premium Area Glow Under Line */}
             <Line
               type="monotone"
               dataKey="votes"
-              stroke="url(#votesGradient)"
+              stroke={isLightTheme ? "#1d4ed8" : "#6ea8ff"}
               strokeWidth={3}
               name="Votes"
-              fill="url(#votesGradient)"
-              fillOpacity={0.3}
               dot={{
-                fill: "#60a5fa",
-                r: 4,
+                fill: isLightTheme ? "#1d4ed8" : "#60a5fa",
+                r: 5,
                 strokeWidth: 2,
-                stroke: "#1e40af",
+                stroke: isLightTheme ? "#ffffff" : "#1e40af",
               }}
               activeDot={{
-                r: 7,
-                stroke: "#93c5fd",
+                r: 8,
+                stroke: isLightTheme ? "#1d4ed8" : "#93c5fd",
                 strokeWidth: 3,
               }}
             />

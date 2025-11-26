@@ -234,7 +234,7 @@ router.post('/login', async (req: Request, res: Response) => {
   const { email, usn, password, rememberMe } = req.body;
   const ip = getClientIp(req);
   const userAgent = req.header('User-Agent') || 'unknown';
-  const identifier = email.toLowerCase(); // Use email as identifier for rate limiting
+  const identifier = email.toLowerCase().trim(); // Use email as identifier for rate limiting
 
   try {
     // Validate input
@@ -279,13 +279,13 @@ router.post('/login', async (req: Request, res: Response) => {
         user = result.student;
         role = 'student';
       }
-      console.log('Attempting to log in user as a student.');
     } 
-    // Teacher login (email only, USN is 'N/A' from form)
+    // Teacher login (email only, USN is 'N/A' or empty from form)
     else {
       user = await Teacher.findOne({ email: sanitizedEmail });
-      role = 'teacher';
-      console.log('Attempting to log in user as a teacher.');
+      if (user) {
+        role = 'teacher';
+      }
     }
 
     // Check if user was found
