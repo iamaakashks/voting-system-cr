@@ -1,12 +1,26 @@
 
 import React from 'react';
+import { Loader2 } from 'lucide-react';
+import { cn } from '../lib/utils';
 
-const Spinner: React.FC = () => {
+interface SpinnerProps {
+  className?: string;
+  text?: string;
+}
+
+const Spinner: React.FC<SpinnerProps> = ({ className, text = "Processing..." }) => {
   return (
-    <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50">
-      <div className="flex flex-col items-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-500"></div>
-        <p className="mt-4 text-white text-lg font-semibold">Processing Transaction...</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm transition-all">
+      <div className={cn("flex flex-col items-center justify-center space-y-4 p-4", className)}>
+        <div className="relative flex items-center justify-center">
+           {/* Outer glow/ring for extra visual polish */}
+          <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+          
+          <Loader2 className="h-12 w-12 animate-spin text-primary transition-colors" />
+        </div>
+        <p className="text-lg font-medium text-foreground/80 animate-pulse">
+          {text}
+        </p>
       </div>
     </div>
   );
