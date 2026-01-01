@@ -1,36 +1,58 @@
-"Timestamp","email","admissionYear","gender","branch","section","usn","name"
-"2025/11/24 2:46:19 PM GMT+5:30","2023ci_tssubhash_b@nie.ac.in","2023","male","ci","B","4NI23CI115","T S SUBHASH "
-"2025/11/24 2:46:54 PM GMT+5:30","2023ci_vsrohith_b@nie.ac.in","2023","male","ci","B","4NI23CI117","V S ROHITH"
-"2025/11/24 2:48:01 PM GMT+5:30","2023ci_nithishn_b@nie.ac.in","2023","male","cs","B","4NI23CI066","Nithish N"
-"2025/11/24 2:48:44 PM GMT+5:30","2023ci_revanthprakashmalagi_b@nie.ac.in","2023","male","ci","B","4NI23CI086","Revanth Malagi "
-"2025/11/24 2:48:48 PM GMT+5:30","2023ci_priyanshukumarpandey_b@nie.ac.in","2023","male","ci","B","4NI23CI078 ","Priyanshu Kumar Pandey "
-"2025/11/24 2:49:01 PM GMT+5:30","2023ci_prerikap@nie.ac.in","2023","female","ci","B","4NI23CI077","Prerika P"
-"2025/11/24 2:50:45 PM GMT+5:30","2023ci_vaishnavidamodhara_b@nie.ac.in","2023","female","cs","B","4NI23CI119","Vaishnavi D"
-"2025/11/24 2:50:48 PM GMT+5:30","piyushgonu1@gmail.com","2023","male","ci","B","4ni23ci072","piyush jha"
-"2025/11/24 2:51:28 PM GMT+5:30","2023ci_piyushjha_b@nie.ac.in","2023","male","ci","B","4ni23ci072","Piyush jha"
-"2025/11/24 2:52:17 PM GMT+5:30","2023ci_rahulreddynirmala_b@nie.ac.in","2023","male","ci","B","4NI23CI082","Rahul Reddy Nirmala"
-"2025/11/24 2:52:28 PM GMT+5:30","2023ci_yatinyogeshdalal_b@nie.ac.in","2023","male","ci","B","4NI23CI126","Yatin Yogesh Dalal "
-"2025/11/24 2:52:34 PM GMT+5:30","2024lci_syedmohammedrayaan_b@nie.ac.in","2024","male","ci","B","4NI24CI409","Syed Mohammed Rayaan "
-"2025/11/24 3:00:39 PM GMT+5:30","2023ci_nisargab_b@nie.ac.in","2023","female","ci","B","4NI23CI063","NISARGA B "
-"2025/11/24 3:01:32 PM GMT+5:30","2023ci_nischithahl_b@nie.ac.in","2023","female","ci","B","4NI23CI064","NISCHITHA . H L"
-"2025/11/24 3:03:35 PM GMT+5:30","2023ci_omkarsmoodvi_b@nie.ac.in","2023","male","ci","B","4NI23CI068 ","Omkar S Moodvi "
-"2025/11/24 3:05:08 PM GMT+5:30","2024lci_rohithmh_b@nie.ac.in","2024","male","ci","B","4NI24CI408","Rohith M H "
-"2025/11/24 3:05:12 PM GMT+5:30","2023ci_omkarkumarhegganna_b@nie.ac.in","2023","male","ci","B","4NI23CI067","Omkar kumar hegganna"
-"2025/11/24 3:12:20 PM GMT+5:30","2023ci_vikrama_b@nie.ac.in","2024","male","ci","B","4NI23CI122","Vikram A"
-"2025/11/24 3:12:20 PM GMT+5:30","tanisharora4542@gmail.com","2023","male","ci","B","4NI23CI116","Tanish Arora"
-"2025/11/24 3:13:13 PM GMT+5:30","2023ci_pradeepkshettar_b@nie.ac.in","2023","male","ci","B","4NI23CI076","PRADEEP K SHETTAR "
-"2025/11/24 3:13:21 PM GMT+5:30","2023ci_yajnithk_b@nie.ac.in","2023","male","ci","B","4ni23ci124","Yajnith K"
-"2025/11/24 3:14:10 PM GMT+5:30","2023ci_vinayakdhawan_b@nie.ac.in","2023","male","ci","B","4ni23ci123 ","Vinayak Dhawan "
-"2025/11/24 3:14:37 PM GMT+5:30","2023ci_vaisirimg_b@nie.ac.in","2023","female","ci","B","4ni23ci120","Vaisiri m g "
-"2025/11/24 3:15:23 PM GMT+5:30","2024lci_tejuhs_b@nie.ac.in","2024","male","ci","B","4ni24ci410 ","Teju h s"
-"2025/11/24 3:16:10 PM GMT+5:30","2023ci_vaisirimg_b@nie.ac.in","2023","female","ci","B","4ni23ci120","Vaisiri m g "
-"2025/11/24 3:16:33 PM GMT+5:30","4ni24ci407","2024","male","ci","B","4ni24ci407","Mohammed Zaid "
-"2025/11/24 3:17:27 PM GMT+5:30","2023ci_rahulkumar_b@nie.ac.in","2023","male","ci","B","4NI23CI081","Rahul Kumar "
-"2025/11/24 3:17:48 PM GMT+5:30","2023ci_poojask_b@nie..ac.in","2023","female","ci","B","4ni23ci073","Pooja S K "
-"2025/11/24 3:18:16 PM GMT+5:30","2023ci_srirangav_b@nie.ac.in","2023","male","ci","B","4NI23CI111","Sriranga V "
-"2025/11/24 3:20:33 PM GMT+5:30","2023ci_puneethms_b@nie.ac.in","2023","male","ci","B","4NI23CI080","Puneeth M S "
-"2025/11/24 3:22:08 PM GMT+5:30","2024lci_mohammedtanzil_b@nie.ac.in","2024","male","ci","B","4NI24CI406 ","Mohammed Tanzil "
-"2025/11/24 3:22:56 PM GMT+5:30","2023ci_rakshithabl_b@nie.ac.in","2023","female","ci","B","4NI23CI084","Rakshitha BL"
-"2025/11/24 3:22:58 PM GMT+5:30","2023ci_vignapsanjoth_b@nie.ac.in","2022","male","ci","B","4ni23ci121","Vignap Sanjoth "
-"2025/11/24 3:26:27 PM GMT+5:30","2023ci_snettikantiajay_b@nie.ac.in","2023","male","ci","B","4NI23CI088","S Nettikanti Ajay "
-"2025/11/24 3:31:31 PM GMT+5:30","2023ci_ranjithursg_b@nie.ac.in","2023","male","ci","B","4NI23CI085","Ranjith Urs G"
+email,admissionYear,gender,branch,section,usn,name
+2022ci_aakashkumarsuman_a@nie.ac.in,2022,male,ci,A,4NI22CI001,Aakash Kumar Suman
+2022ci_abhishek_a@nie.ac.in,2022,male,ci,A,4NI22CI002,Abhishek
+2022ci_adwaitha_a@nie.ac.in,2022,male,ci,A,4NI22CI003,Adwaith A
+2022ci_akshaysrivathsa_a@nie.ac.in,2022,male,ci,A,4NI22CI004,Akshay Srivathsa
+2022ci_amanmishra_a@nie.ac.in,2022,male,ci,A,4NI22CI005,Aman Mishra
+2022ci_angelpaul_a@nie.ac.in,2022,female,ci,A,4NI22CI006,Angel Paul
+2022ci_anstondenvyldsouza_a@nie.ac.in,2022,male,ci,A,4NI22CI007,Anston Denvyl Dsouza
+2022ci_anurag_a@nie.ac.in,2022,male,ci,A,4NI22CI008,Anurag
+2022ci_anushreeg_a@nie.ac.in,2022,female,ci,A,4NI22CI009,Anushree G
+2022ci_anushreep_a@nie.ac.in,2022,female,ci,A,4NI22CI010,Anushree P
+2022ci_arnavbhattacharya_a@nie.ac.in,2022,male,ci,A,4NI22CI011,Arnav Bhattacharya
+2022ci_atharvasinghtanwar_a@nie.ac.in,2022,male,ci,A,4NI22CI012,Atharva Singh Tanwar
+2022ci_charishmakp_a@nie.ac.in,2022,female,ci,A,4NI22CI013,Charishma K P
+2022ci_darshan_a@nie.ac.in,2022,male,ci,A,4NI22CI014,Darshan
+2022ci_darshanks_a@nie.ac.in,2022,male,ci,A,4NI22CI015,Darshan K S
+2022ci_davantc_a@nie.ac.in,2022,male,ci,A,4NI22CI016,Davan T C
+2022ci_deepthipoornav_a@nie.ac.in,2022,female,ci,A,4NI22CI017,Deepthi Poorna V
+2022ci_devarajsagar_a@nie.ac.in,2022,male,ci,A,4NI22CI018,Devaraj Sagar
+2022ci_dhanushreer_a@nie.ac.in,2022,female,ci,A,4NI22CI019,Dhanushree R
+2022ci_farhanms_a@nie.ac.in,2022,male,ci,A,4NI22CI021,Farhan M S
+2022ci_gyashita_a@nie.ac.in,2022,female,ci,A,4NI22CI022,G Yashita
+2022ci_harshavardhanspatil_a@nie.ac.in,2022,male,ci,A,4NI22CI024,Harshavardhan S Patil
+2022ci_hrudhaygirish_a@nie.ac.in,2022,male,ci,A,4NI22CI025,Hrudhay Girish
+2022ci_incharaghegde_a@nie.ac.in,2022,female,ci,A,4NI22CI026,Inchara G Hegde
+2022ci_irshitasaanchi_a@nie.ac.in,2022,female,ci,A,4NI22CI027,Irshita Saanchi
+2022ci_kanikalal_a@nie.ac.in,2022,female,ci,A,4NI22CI028,Kanika Lal
+2022ci_kaushikmc_a@nie.ac.in,2022,male,ci,A,4NI22CI029,Kaushik M C
+2022ci_kirann_a@nie.ac.in,2022,male,ci,A,4NI22CI030,Kiran N
+2022ci_lekhanak_a@nie.ac.in,2022,female,ci,A,4NI22CI031,Lekhana K
+2022ci_likhithamm_a@nie.ac.in,2022,female,ci,A,4NI22CI032,Likhitha M M
+2022ci_msaisanjeev_a@nie.ac.in,2022,male,ci,A,4NI22CI033,M Sai Sanjeev
+2022ci_mohamedshoaibshuja_a@nie.ac.in,2022,male,ci,A,4NI22CI035,Mohamed Shoaib Shuja
+2022ci_monukumarshekhar_a@nie.ac.in,2022,male,ci,A,4NI22CI036,Monu Kumar Shekhar
+2022ci_nagashrees_a@nie.ac.in,2022,female,ci,A,4NI22CI037,Nagashree S
+2022ci_niroopnr_a@nie.ac.in,2022,male,ci,A,4NI22CI039,Niroop N R
+2022ci_pavanisreenivas_a@nie.ac.in,2022,female,ci,A,4NI22CI040,Pavani Sreenivas
+2022ci_prasannapatil_a@nie.ac.in,2022,male,ci,A,4NI22CI041,Prasanna Patil
+2022ci_pratyushp_a@nie.ac.in,2022,male,ci,A,4NI22CI042,Pratyush P
+2022ci_rajatvs_a@nie.ac.in,2022,male,ci,A,4NI22CI043,Rajat V S
+2022ci_reenashreept_a@nie.ac.in,2022,female,ci,A,4NI22CI044,Reenashree P T
+2022ci_rishabr_a@nie.ac.in,2022,male,ci,A,4NI22CI045,Rishab R
+2022ci_rishavgupta_a@nie.ac.in,2022,male,ci,A,4NI22CI046,Rishav Gupta
+2022ci_rohang_a@nie.ac.in,2022,male,ci,A,4NI22CI047,Rohan G
+2022ci_skeerthana_a@nie.ac.in,2022,female,ci,A,4NI22CI048,S Keerthana
+2022ci_sagarg_a@nie.ac.in,2022,male,ci,A,4NI22CI049,Sagar G
+2022ci_sandeshshrikanthegde_a@nie.ac.in,2022,male,ci,A,4NI22CI050,Sandesh Shrikant Hegde
+2022ci_sathwiknh_a@nie.ac.in,2022,male,ci,A,4NI22CI051,Sathwik N H
+2022ci_shamagopalkrishnahegde_a@nie.ac.in,2022,male,ci,A,4NI22CI052,Shama Gopalkrishna Hegde
+2022ci_shaunakbanerjee_a@nie.ac.in,2022,male,ci,A,4NI22CI053,Shaunak Banerjee
+2022ci_sinchanms_a@nie.ac.in,2022,male,ci,A,4NI22CI054,Sinchan M S
+2022ci_souravsavadhani_a@nie.ac.in,2022,male,ci,A,4NI22CI055,Sourav S Avadhani
+2022ci_surajgrao_a@nie.ac.in,2022,male,ci,A,4NI22CI056,Suraj G Rao
+2022ci_thanushaapatel_a@nie.ac.in,2022,female,ci,A,4NI22CI057,Thanusha A Patel
+2022ci_udaychandrar_a@nie.ac.in,2022,male,ci,A,4NI22CI058,Uday Chandra R
+2022ci_udith_a@nie.ac.in,2022,male,ci,A,4NI22CI059,Udit H
+2022ci_varshar_a@nie.ac.in,2022,female,ci,A,4NI22CI061,Varsha R
+2022ci_vibhassrinivasnagalla_a@nie.ac.in,2022,male,ci,A,4NI22CI062,Vibhas Srinivas Nagalla

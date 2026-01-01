@@ -30,7 +30,8 @@ const StudentSchema: Schema = new Schema({
 
 StudentSchema.methods.isValidStudent = function (): boolean {
   const currentYear = new Date().getFullYear();
-  return currentYear - this.admissionYear < 4;
+  // Allow students up to 4 years (inclusive) to account for the final semester in the 4th calendar year
+  return currentYear - this.admissionYear <= 4;
 };
 
 export default mongoose.model<IStudent>('Student', StudentSchema);

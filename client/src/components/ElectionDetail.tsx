@@ -129,10 +129,10 @@ const CandidateCard: React.FC<{
 }> = ({ candidate, onInitiateVote, buttonState, userRole, isElectionOver }) => (
   <div
     className="
-      bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col items-center p-6 text-center
-      border border-gray-700
+      bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col items-center p-6 text-center
+      border border-gray-200 dark:border-gray-700
       transition-all duration-300
-      hover:border-[#4deeea] hover:shadow-[0_0_16px_#4deeea55]
+      hover:border-[#b4a9e6] hover:shadow-[0_0_16px_#b4a9e655]
     "
   >
     <img
@@ -140,13 +140,13 @@ const CandidateCard: React.FC<{
       alt={candidate.name}
       className="
         w-32 h-32 rounded-full object-cover mb-4 
-        border-4 border-gray-700 
+        border-4 border-gray-100 dark:border-gray-700 
         transition-all duration-300
-        hover:border-[#a86aff] hover:shadow-[0_0_20px_#a86aff55]
+        hover:border-[#b4a9e6] hover:shadow-[0_0_20px_#b4a9e655]
       "
     />
 
-    <h4 className="text-lg font-semibold text-white mb-4">
+    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
       {candidate.name}
     </h4>
 
@@ -157,7 +157,7 @@ const CandidateCard: React.FC<{
         className={`
           w-full py-2 px-4 rounded-md font-bold text-white transition-all duration-300
           ${buttonState.className}
-          ${!buttonState.disabled ? "hover:shadow-[0_0_12px_#4deeea99]" : ""}
+          ${!buttonState.disabled ? "hover:shadow-[0_0_12px_#b4a9e699]" : ""}
         `}
       >
         {buttonState.text}
@@ -172,15 +172,15 @@ const CandidateCard: React.FC<{
 const ThanksForVoting = () => (
   <div
     className="
-      bg-green-500/10 border border-green-500 text-green-300 
+      bg-green-500/10 border border-green-500 text-green-600 dark:text-green-300 
       rounded-lg p-12 text-center shadow-lg
       transition-all duration-300
-      hover:shadow-[0_0_18px_#4deeea66]
+      hover:shadow-[0_0_18px_#b4a9e666]
     "
   >
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      className="h-24 w-24 text-green-400 mx-auto mb-4"
+      className="h-24 w-24 text-green-500 mx-auto mb-4"
       fill="none"
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -193,8 +193,8 @@ const ThanksForVoting = () => (
       />
     </svg>
 
-    <h4 className="text-3xl font-bold text-white mb-2">Thanks for Voting!</h4>
-    <p className="text-lg text-gray-300">
+    <h4 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Thanks for Voting!</h4>
+    <p className="text-lg text-gray-600 dark:text-gray-300">
       Your vote has been recorded successfully.
     </p>
   </div>
@@ -239,37 +239,37 @@ const VoteModal: React.FC<{
   return (
     <div
       className="
-        fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm
+        fixed inset-0 bg-black/60 backdrop-blur-sm
         flex items-center justify-center z-50
       "
       onClick={onClose}
     >
       <div
         className="
-          bg-[#111827] rounded-xl shadow-xl p-8 w-full max-w-md 
-          border border-[#4deeea55]
+          bg-white dark:bg-[#111827] rounded-xl shadow-xl p-8 w-full max-w-md 
+          border border-gray-200 dark:border-[#b4a9e655]
           transition-all duration-300
-          hover:shadow-[0_0_20px_#4deeea99]
+          hover:shadow-[0_0_20px_#b4a9e699]
         "
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-2xl font-bold text-white mb-1">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
           Confirm Your Vote
         </h3>
 
-        <p className="text-gray-400 mb-4">
+        <p className="text-gray-600 dark:text-gray-400 mb-4">
           Voting for{" "}
-          <span className="font-bold text-white">{candidateName}</span>
+          <span className="font-bold text-gray-900 dark:text-white">{candidateName}</span>
         </p>
 
-        <p className="text-sm text-gray-300 mb-4">
+        <p className="text-sm text-gray-500 dark:text-gray-300 mb-4">
           Enter the voting ticket sent to your email.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Your Email
             </label>
             <input
@@ -278,8 +278,8 @@ const VoteModal: React.FC<{
               onChange={(e) => setEmail(e.target.value)}
               required
               className="
-                w-full bg-gray-700 border border-gray-600 rounded-md p-3 text-white
-                focus:ring-2 focus:ring-[#4deeea]
+                w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md p-3 text-gray-900 dark:text-white
+                focus:ring-2 focus:ring-[#b4a9e6]
               "
               placeholder="your.email@nie.ac.in"
             />
@@ -287,7 +287,7 @@ const VoteModal: React.FC<{
 
           {/* Ticket */}
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Voting Ticket
             </label>
             <input
@@ -296,9 +296,9 @@ const VoteModal: React.FC<{
               onChange={(e) => setTicket(e.target.value.toUpperCase())}
               required
               className="
-                w-full bg-gray-700 border border-gray-600 rounded-md p-3 text-white text-center 
+                w-full bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md p-3 text-gray-900 dark:text-white text-center 
                 font-mono text-lg tracking-wider
-                focus:ring-2 focus:ring-[#a86aff]
+                focus:ring-2 focus:ring-[#b4a9e6]
               "
               placeholder="TICKET CODE"
             />
@@ -308,7 +308,7 @@ const VoteModal: React.FC<{
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-gray-600 rounded-md hover:bg-gray-500 text-white"
+              className="px-6 py-2 bg-gray-200 dark:bg-gray-600 rounded-md hover:bg-gray-300 dark:hover:bg-gray-500 text-gray-700 dark:text-white transition-colors"
             >
               Cancel
             </button>
@@ -316,8 +316,8 @@ const VoteModal: React.FC<{
             <button
               type="submit"
               className="
-                px-6 py-2 bg-white text-black rounded-md font-semibold
-                hover:bg-gray-200 hover:shadow-[0_0_12px_#4deeea66]
+                px-6 py-2 bg-gradient-to-r from-[#b4a9e6] to-[#6d7382] text-white rounded-md font-semibold
+                hover:shadow-[0_0_12px_#b4a9e666] transition-all
               "
             >
               Submit Vote
@@ -337,17 +337,17 @@ const VoteModal: React.FC<{
 // Neon Loading Overlay
 // ---------------------------------------------------------
 const NeonLoadingOverlay: React.FC = () => (
-  <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
+  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
     <div
       className="
-        bg-gray-900 rounded-xl shadow-xl p-8 text-center
-        border border-[#4deeea55]
-        hover:shadow-[0_0_20px_#4deeea88]
+        bg-white dark:bg-gray-900 rounded-xl shadow-xl p-8 text-center
+        border border-gray-200 dark:border-[#b4a9e655]
+        hover:shadow-[0_0_20px_#b4a9e688]
         transition-all
       "
     >
-      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4deeea] mx-auto mb-4" />
-      <p className="text-white">Sending voting ticket to your email...</p>
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b4a9e6] mx-auto mb-4" />
+      <p className="text-gray-900 dark:text-white">Sending voting ticket to your email...</p>
     </div>
   </div>
 );
@@ -361,7 +361,7 @@ const NeonErrorBox: React.FC<{ message: string; onDismiss: () => void }> = ({
 }) => (
   <div
     className="
-      bg-red-500/10 border border-red-500 text-red-300 
+      bg-red-500/10 border border-red-500 text-red-600 dark:text-red-300 
       rounded-lg p-4 mb-4
       transition-all duration-300
       hover:shadow-[0_0_12px_#ff4d4d55]
@@ -381,10 +381,10 @@ const NeonErrorBox: React.FC<{ message: string; onDismiss: () => void }> = ({
 const NeonSuccessBox: React.FC = () => (
   <div
     className="
-      bg-green-500/10 border border-green-500 text-green-300 
+      bg-green-500/10 border border-green-500 text-green-600 dark:text-green-300 
       rounded-lg p-4 mb-4
       transition-all duration-300
-      hover:shadow-[0_0_12px_#4deeea55]
+      hover:shadow-[0_0_12px_#b4a9e655]
     "
   >
     <p className="font-bold">✓ Voting ticket sent!</p>
@@ -401,22 +401,22 @@ const NotaCard: React.FC<{
 }> = ({ onClick, buttonState }) => (
   <div
     className="
-      bg-gray-900 rounded-xl shadow-lg overflow-hidden flex flex-col items-center p-6 text-center w-full max-w-xs
-      border border-red-500/40
+      bg-white dark:bg-gray-900 rounded-xl shadow-lg overflow-hidden flex flex-col items-center p-6 text-center w-full max-w-xs
+      border border-red-200 dark:border-red-500/40
       hover:shadow-[0_0_20px_#ff4d4d88]
       transition-all duration-300
     "
   >
     <div
       className="
-        w-32 h-32 rounded-full bg-red-500/20 flex items-center justify-center mb-4
-        border-4 border-red-500/40
+        w-32 h-32 rounded-full bg-red-100 dark:bg-red-500/20 flex items-center justify-center mb-4
+        border-4 border-red-200 dark:border-red-500/40
         shadow-[0_0_14px_#ff4d4d55]
       "
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        className="h-16 w-16 text-red-400"
+        className="h-16 w-16 text-red-500 dark:text-red-400"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor"
@@ -425,7 +425,7 @@ const NotaCard: React.FC<{
       </svg>
     </div>
 
-    <h4 className="text-lg font-semibold text-white mb-4">None of the Above (NOTA)</h4>
+    <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">None of the Above (NOTA)</h4>
 
     <button
       onClick={onClick}
@@ -440,6 +440,7 @@ const NotaCard: React.FC<{
     </button>
   </div>
 );
+
 
 // ---------------------------------------------------------
 // Main ElectionDetail component (start)
@@ -631,10 +632,10 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
   // Render — main UI up to the candidates list (keeps original layout)
   // ----------------------------------------------------------------
   return (
-    <div className="space-y-12">
+    <div className="space-y-12 pb-20 transition-colors duration-300">
       {/* Back */}
-      <button onClick={onBack} className="text-white font-semibold hover:text-[#4deeea] transition-colors">
-        &larr; Back
+      <button onClick={onBack} className="text-gray-900 dark:text-white font-semibold hover:text-[#b4a9e6] dark:hover:text-[#b4a9e6] transition-colors flex items-center gap-2">
+        &larr; Back to Dashboard
       </button>
       {/* Modal / Overlays / Notifications */}
       <VoteModal
@@ -656,36 +657,36 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
       
 
       {/* Header */}
-      <h2 className="text-4xl font-extrabold text-center text-white">{election.title}</h2>
+      <h2 className="text-4xl font-extrabold text-center text-gray-900 dark:text-white">{election.title}</h2>
       {/* Hide everything for students until election starts */}
       {buttonState.text === "Voting Not Started" && user?.role === "student" ? (
         // Show only countdown for students when election hasn't started
         <div className="text-center py-20">
-          <div className="inline-block bg-gradient-to-br from-[#4deeea]/20 to-[#a86aff]/20 backdrop-blur-lg p-12 rounded-2xl border border-[#4deeea]/30 shadow-[0_0_30px_#4deeea44]">
-            <h2 className="text-3xl font-bold text-white mb-6">{election.title}</h2>
-            {election.description && <p className="text-gray-300 mb-8">{election.description}</p>}
-            <p className="text-xl text-gray-300 mb-4">Election starts in</p>
-            <p className="text-5xl font-bold text-[#4deeea] font-mono tracking-wider">{timeLeft}</p>
+          <div className="inline-block bg-white dark:bg-gradient-to-br dark:from-[#b4a9e6]/20 dark:to-[#6d7382]/20 backdrop-blur-lg p-12 rounded-2xl border border-gray-200 dark:border-[#b4a9e6]/30 shadow-xl dark:shadow-[0_0_30px_#b4a9e644]">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{election.title}</h2>
+            {election.description && <p className="text-gray-600 dark:text-gray-300 mb-8">{election.description}</p>}
+            <p className="text-xl text-gray-500 dark:text-gray-300 mb-4">Election starts in</p>
+            <p className="text-5xl font-bold text-[#b4a9e6] font-mono tracking-wider">{timeLeft}</p>
             <p className="text-sm text-gray-400 mt-8">You can view candidates and cast your vote once the election begins</p>
           </div>
         </div>
       ) : (
         <>
-          {election.description && <p className="text-center text-gray-400">{election.description}</p>}
+          {election.description && <p className="text-center text-gray-600 dark:text-gray-400">{election.description}</p>}
 
           {/* Timer */}
           {isElectionLive && (
             <div className="flex justify-center">
               <div
                 className="
-                  p-4 rounded-lg bg-gray-900 text-center border border-[#4deeea55]
-                  shadow-[0_0_14px_#4deeea33]
-                  hover:shadow-[0_0_20px_#a86aff55]
-                  transition-all
+                  p-4 rounded-lg bg-white dark:bg-gray-900 text-center border border-gray-200 dark:border-[#b4a9e655]
+                  shadow-md dark:shadow-[0_0_14px_#b4a9e633]
+                  hover:shadow-lg dark:hover:shadow-[0_0_20px_#6d738255]
+                  transition-all duration-300
                 "
               >
-                <p className="text-gray-300">{label}</p>
-                <p className="text-3xl font-bold text-white font-mono tracking-widest">{timeLeft}</p>
+                <p className="text-gray-500 dark:text-gray-300">{label}</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white font-mono tracking-widest">{timeLeft}</p>
               </div>
             </div>
           )}
@@ -702,15 +703,15 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
             </div>
           )}
           
-          <h3 className="text-2xl font-bold text-center">Candidates</h3>
+          <h3 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Candidates</h3>
 
           {/* Voting / Thanks / Closed states will be rendered below */}
           {election.userVoted && user?.role !== "teacher" ? (
             <ThanksForVoting />
           ) : isElectionOver ? (
             <div className="text-center py-12">
-              <h4 className="text-2xl font-bold text-white mb-2">Voting is Closed</h4>
-              <p className="text-gray-400">The voting period has ended.</p>
+              <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Voting is Closed</h4>
+              <p className="text-gray-600 dark:text-gray-400">The voting period has ended.</p>
             </div>
           ) : (
             <>
@@ -743,7 +744,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
       =========================== */}
     <div id="results-analytics" className="relative">
       <div className="flex justify-between items-center mt-12 mb-4">
-        <h3 className="text-2xl font-bold">
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
           {showResults
             ? isElectionOver
               ? "Final Results"
@@ -769,18 +770,18 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Download Participants CSV
+                  CSV
                 </>
               )}
             </button>
             <button
               onClick={handleDownload}
               disabled={isDownloadingPdf}
-              className="px-4 py-2 bg-[#4deeea] text-black rounded-lg font-semibold hover:bg-[#3dddd9] disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
+              className="px-4 py-2 bg-[#b4a9e6] text-white rounded-lg font-semibold hover:bg-[#a86aff] disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
             >
               {isDownloadingPdf ? (
                 <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-black"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   Downloading...
                 </>
               ) : (
@@ -788,7 +789,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  Download Results PDF
+                  PDF
                 </>
               )}
             </button>
@@ -798,10 +799,10 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
   
       <div
         className="
-          bg-gray-900 p-6 rounded-xl shadow-xl
-          border border-[#4deeea33]
-          hover:shadow-[0_0_20px_#4deeea55]
-          transition-all
+          bg-white dark:bg-gray-900 p-6 rounded-xl shadow-lg dark:shadow-xl
+          border border-gray-200 dark:border-[#b4a9e633]
+          hover:shadow-xl dark:hover:shadow-[0_0_20px_#b4a9e655]
+          transition-all duration-300
         "
       >
         {showResults ? (
@@ -824,18 +825,18 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                 <div
                   className="
                     text-center mb-6 p-4 rounded-lg
-                    bg-white/5 border border-white/20
-                    shadow-[0_0_18px_#a86aff55]
+                    bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/20
+                    shadow-md dark:shadow-[0_0_18px_#b4a9e655]
                   "
                 >
-                  <h4 className="text-lg font-bold text-white">
+                  <h4 className="text-lg font-bold text-gray-900 dark:text-white">
                     {winners.length > 1 ? "Winners (Tie)" : "Winner"}
                   </h4>
 
                   {winners.map((winner) => (
                     <div key={winner.id} className="mt-2">
-                      <p className="text-2xl font-extrabold text-white">{winner.name}</p>
-                      <p className="text-gray-400">
+                      <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{winner.name}</p>
+                      <p className="text-gray-500 dark:text-gray-400">
                         Votes: {election.results[winner.id]}
                       </p>
                     </div>
@@ -847,7 +848,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
             {/* ===========================
                 RESULTS TABLE
                 =========================== */}
-            <div className="mt-8 bg-gray-900 p-6 rounded-xl shadow-xl border border-[#4deeea33]">
+            <div className="mt-8 bg-white dark:bg-gray-900 p-6 rounded-xl shadow-md dark:shadow-xl border border-gray-100 dark:border-[#b4a9e633]">
               <ResultsTable
                 candidates={election.candidates}
                 results={election.results}
@@ -872,8 +873,8 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                 =========================== */}
             {loadingStats ? (
               <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#4deeea] mx-auto mb-4"></div>
-                <p className="text-gray-400">Loading analytics…</p>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#b4a9e6] mx-auto mb-4"></div>
+                <p className="text-gray-600 dark:text-gray-400">Loading analytics…</p>
               </div>
             ) : (
               <>
@@ -883,10 +884,10 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                 {timelineData.length > 0 && (
                   <div
                     className="
-                      mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
-                      border border-[#4deeea33]
-                      hover:shadow-[0_0_20px_#4deeea55]
-                      transition-all
+                      mt-8 bg-white dark:bg-gray-900 p-6 rounded-xl shadow-md dark:shadow-xl
+                      border border-gray-100 dark:border-[#b4a9e633]
+                      hover:shadow-lg dark:hover:shadow-[0_0_20px_#b4a9e655]
+                      transition-all duration-300
                     "
                   >
                     <VotingTimelineChart data={timelineData} />
@@ -899,10 +900,10 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                 {turnoutData && (
                   <div
                     className="
-                      mt-8 bg-gray-900 p-6 rounded-xl shadow-xl
-                      border border-[#4deeea33]
-                      hover:shadow-[0_0_20px_#4deeea55]
-                      transition-all
+                      mt-8 bg-white dark:bg-gray-900 p-6 rounded-xl shadow-md dark:shadow-xl
+                      border border-gray-100 dark:border-[#b4a9e633]
+                      hover:shadow-lg dark:hover:shadow-[0_0_20px_#b4a9e655]
+                      transition-all duration-300
                     "
                   >
                     <VoterTurnoutAnalytics data={turnoutData} />
@@ -914,7 +915,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
           </>
         ) : (
           <div className="text-center py-12">
-            <p className="text-gray-400">
+            <p className="text-gray-600 dark:text-gray-400">
               Results will be revealed after {new Date(election.endTime).toLocaleString()}
             </p>
           </div>

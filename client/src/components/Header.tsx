@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { User } from '../types';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import ThemeToggle from './ThemeToggle';
 import UserProfileDropdown from './UserProfileDropdown';
 
 interface HeaderProps {
@@ -32,7 +31,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <header className="bg-white/80 dark:bg-[#121212]/80 border-b border-gray-200 dark:border-[#434546] sticky top-0 z-50 backdrop-blur-lg">
+    <header className="bg-[#121212]/80 border-b border-[#434546] sticky top-0 z-50 backdrop-blur-lg">
       <div className="container mx-auto px-4 py-4 flex justify-between items-center">
         {/* Logo */}
         <div className="flex items-center space-x-3 group cursor-pointer">
@@ -43,28 +42,27 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout }) => {
             <div className="absolute inset-0 bg-[#b4a9e6] rounded-full opacity-0 group-hover:opacity-20 blur-xl transition-opacity"></div>
           </div>
           <div>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-[#b4a9e6] to-[#6d7382] bg-clip-text text-transparent">VeriVote</h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 -mt-1">Secure Voting</p>
+            <h1 className="text-2xl font-bold text-white">VeriVote</h1>
+            <p className="text-xs text-gray-400 -mt-1">Secure Voting</p>
           </div>
         </div>
 
         {/* Right Side */}
         <div className="flex items-center gap-4">
-          <ThemeToggle />
           
           {user && (
             <>
               <div className="relative">
                 <div 
-                  className="hidden md:flex items-center gap-3 px-4 py-2 bg-gray-100 dark:bg-[#242424] rounded-lg border border-gray-200 dark:border-[#434546] cursor-pointer"
+                  className="hidden md:flex items-center gap-3 px-4 py-2 bg-[#242424] rounded-lg border border-[#434546] cursor-pointer"
                   onClick={() => setIsProfileDropdownOpen(prev => !prev)}
                 >
                   <div className="w-10 h-10 bg-gradient-to-br from-[#b4a9e6] to-[#6d7382] rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
                     {getInitials()}
                   </div>
                   <div className="text-left">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{getDisplayName()}</p>
-                    <Badge variant="secondary" className="text-xs bg-[#b4a9e6]/20 text-[#b4a9e6] dark:text-white border-[#b4a9e6]/30">
+                    <p className="text-sm font-semibold text-white">{getDisplayName()}</p>
+                    <Badge variant="secondary" className="text-xs bg-[#b4a9e6]/20 text-white border-[#b4a9e6]/30">
                       {user.role || 'user'}
                     </Badge>
                   </div>

@@ -113,7 +113,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
         <div className="mt-5">
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(election.id); }}
-            className="w-full py-2 rounded-lg bg-gradient-to-r from-white to-gray-200 text-black font-semibold shadow hover:scale-[1.01] transition"
+            className="w-full py-2.5 rounded-xl bg-white text-black font-bold shadow-lg hover:bg-gray-100 transition-all active:scale-95"
           >
             View Details →
           </button>
