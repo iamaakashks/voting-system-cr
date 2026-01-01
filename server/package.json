@@ -11,6 +11,7 @@
     "seeder:destroy": "ts-node src/seeder.ts -d",
     "migrate:students": "ts-node src/scripts/addPublicKeyToStudents.ts",
     "migrate:elections": "ts-node src/scripts/updateElectionStatus.ts",
+    "migrate:hash-passwords": "ts-node src/scripts/hashExistingPasswords.ts",
     "test": "jest"
   },
   "keywords": [],

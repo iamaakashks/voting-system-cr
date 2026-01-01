@@ -12,7 +12,9 @@ import voteRoutes from './routes/vote';
 import transactionRoutes from './routes/transactions';
 import ticketRoutes from './routes/tickets';
 import cryptoRoutes from './routes/crypto';
+import adminRoutes from './routes/admin';
 import { startElectionScheduler } from './utils/electionScheduler';
+import { enforceHTTPS } from './middleware/httpsRedirect';
 
 // Connect to Database
 connectDB();
@@ -30,10 +32,40 @@ export const io = new Server(httpServer, {
   cors: corsOptions
 });
 
-// Middleware
-app.use(helmet());
+// Middleware - Security Headers with helmet.js
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles for React
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", process.env.CLIENT_URL || 'http://localhost:3000'],
+      fontSrc: ["'self'", "data:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false, // Disable for Socket.IO compatibility
+  hsts: {
+    maxAge: 31536000, // 1 year in seconds
+    includeSubDomains: true,
+    preload: true,
+  },
+  referrerPolicy: {
+    policy: 'strict-origin-when-cross-origin',
+  },
+  noSniff: true, // X-Content-Type-Options
+  xssFilter: true, // X-XSS-Protection
+  hidePoweredBy: true, // Remove X-Powered-By header
+}));
+
 app.use(cors(corsOptions));
 app.use(express.json());
+
+// HTTPS redirect in production
+app.use(enforceHTTPS);
 
 // Socket.IO connection with room-based broadcasting for scalability
 io.on('connection', (socket) => {
@@ -76,6 +108,7 @@ app.use('/api/transactions', transactionRoutes);
 app.use('/api/vote', voteRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/crypto', cryptoRoutes);
+app.use('/api/admin', adminRoutes);
 
 const PORT = process.env.PORT || 5000;
 

@@ -96,15 +96,12 @@ router.post('/register-student', async (req: Request, res: Response) => {
       });
     }
 
-    // Hash password with higher cost factor for better security
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    // Password will be automatically hashed by the pre-save hook in the Student model
     const newStudent = new Student({
       usn: sanitizedUSN,
       name: sanitizedName,
       email: sanitizedEmail,
-      password: hashedPassword,
+      password: password, // Will be hashed by model pre-save hook
       admissionYear,
       branch: branch.toLowerCase(),
       section: section.toLowerCase(),
@@ -184,15 +181,12 @@ router.post('/register-teacher', async (req: Request, res: Response) => {
       });
     }
 
-    // Hash password with higher cost factor
-    const salt = await bcrypt.genSalt(12);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
+    // Password will be automatically hashed by the pre-save hook in the Teacher model
     const newTeacher = new Teacher({
       teacherId: sanitizedTeacherId,
       name: sanitizedName,
       email: sanitizedEmail,
-      password: hashedPassword,
+      password: password, // Will be hashed by model pre-save hook
       branch: branch.toLowerCase(),
     });
     
