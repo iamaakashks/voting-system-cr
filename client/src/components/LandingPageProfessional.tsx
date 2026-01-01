@@ -139,7 +139,7 @@ const LandingPageProfessional: React.FC<LandingPageProps> = ({ onNavigateToLogin
               <div className="bg-gradient-to-br from-[#b4a9e6] to-[#6d7382] p-2.5 rounded-xl shadow-lg">
                 <Vote className="w-7 h-7 text-white" />
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-[#b4a9e6] to-[#6d7382] bg-clip-text text-transparent">
+              <span className="text-2xl font-bold text-white">
                 VeriVote
               </span>
             </div>
@@ -168,30 +168,6 @@ const LandingPageProfessional: React.FC<LandingPageProps> = ({ onNavigateToLogin
                 Technology
               </Button>
             </div>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={toggleTheme}
-              className="relative inline-flex items-center justify-center w-11 h-11 rounded-xl 
-                         bg-gray-200 dark:bg-[#242424] hover:bg-gray-300 dark:hover:bg-[#434546] 
-                         transition-all duration-300 shadow-md hover:shadow-lg
-                         border border-gray-300 dark:border-[#434546]"
-              aria-label="Toggle theme"
-              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-            >
-              <div className="relative w-5 h-5">
-                <Sun
-                  className={`absolute inset-0 w-5 h-5 text-yellow-500 transition-all duration-300 transform ${
-                    theme === 'light' ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 -rotate-90 scale-0'
-                  }`}
-                />
-                <Moon
-                  className={`absolute inset-0 w-5 h-5 text-[#b4a9e6] transition-all duration-300 transform ${
-                    theme === 'dark' ? 'opacity-100 rotate-0 scale-100' : 'opacity-0 rotate-90 scale-0'
-                  }`}
-                />
-              </div>
-            </button>
           </div>
         </nav>
       </header>
@@ -205,7 +181,7 @@ const LandingPageProfessional: React.FC<LandingPageProps> = ({ onNavigateToLogin
           </div>
 
           {/* Title */}
-          <h1 className="text-6xl md:text-7xl lg:text-8xl font-extrabold mb-6 bg-gradient-to-r from-[#b4a9e6] via-[#6d7382] to-[#b4a9e6] bg-clip-text text-transparent leading-tight">
+          <h1 className="text-6xl md:text-7xl lg:text-8xl font-extrabold mb-6 text-white leading-tight">
             VeriVote
           </h1>
 
@@ -232,25 +208,25 @@ const LandingPageProfessional: React.FC<LandingPageProps> = ({ onNavigateToLogin
           </p>
 
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+          <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mb-16">
             <Button 
               size="lg" 
               onClick={onStudentLogin} 
-              className="text-lg px-10 py-6 bg-linear-to-r from-[#b4a9e6] to-[#6d7382] hover:from-[#6d7382] hover:to-[#b4a9e6] text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 group"
+              className="text-lg px-10 py-7 bg-[#121212] hover:bg-[#1a1a1a] text-white border-2 border-[#b4a9e6] shadow-[0_0_20px_rgba(180,169,230,0.2)] hover:shadow-[0_0_30px_rgba(180,169,230,0.4)] transform hover:scale-105 transition-all duration-300 group rounded-xl font-bold"
             >
-              <Users className="w-5 h-5 mr-2" />
+              <Users className="w-6 h-6 mr-3 text-[#b4a9e6]" />
               Student Login
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform text-[#b4a9e6]" />
             </Button>
 
             <Button 
               size="lg" 
               onClick={onTeacherLogin} 
-              className="text-lg px-10 py-6 bg-gradient-to-r from-[#434546] to-[#242424] hover:from-[#6d7382] hover:to-[#434546] text-white shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300 group"
+              className="text-lg px-10 py-7 bg-white hover:bg-gray-100 text-black shadow-[0_10px_30px_-10px_rgba(255,255,255,0.2)] hover:shadow-[0_15px_40px_-10px_rgba(255,255,255,0.4)] transform hover:scale-105 transition-all duration-300 group rounded-xl font-bold border border-gray-200"
             >
-              <Trophy className="w-5 h-5 mr-2" />
+              <Trophy className="w-6 h-6 mr-3" />
               Teacher Login
-              <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-6 h-6 ml-3 group-hover:translate-x-1 transition-transform" />
             </Button>
           </div>
 
@@ -518,7 +494,7 @@ const LandingPageProfessional: React.FC<LandingPageProps> = ({ onNavigateToLogin
                 <div className="bg-linear-to-br from-[#b4a9e6] to-[#6d7382] p-2 rounded-lg shadow-lg">
                   <Vote className="w-6 h-6 text-white" />
                 </div>
-                <span className="text-xl font-bold bg-linear-to-r from-[#b4a9e6] to-[#6d7382] bg-clip-text text-transparent">VeriVote</span>
+                <span className="text-xl font-bold text-white">VeriVote</span>
               </div>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 Secure, transparent, and decentralized voting for the modern era.

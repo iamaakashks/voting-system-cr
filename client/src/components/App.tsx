@@ -70,19 +70,13 @@ const App: React.FC = () => {
       } else if (currentUser.role === 'teacher') {
         fetchTeacherData();
       }
-      const justLoggedOut = sessionStorage.getItem('justLoggedOut');
-      if (!justLoggedOut && location.pathname.startsWith('/login')) {
-          navigate('/dashboard');
-      }
-      if (justLoggedOut) {
-          sessionStorage.removeItem('justLoggedOut');
-      }
+      sessionStorage.removeItem('justLoggedOut');
     } else {
       // User is logged out, clear local data
       setElections([]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentUser, navigate, location.pathname]);
+  }, [currentUser]);
 
   // Effect for handling real-time updates - MUST run only once per login session
   useEffect(() => {
@@ -120,6 +114,8 @@ const App: React.FC = () => {
     try {
       const user = await login(credentials);
       showNotification(`Welcome, ${user.name}!`, 'success');
+      // Navigate to dashboard after successful login
+      navigate('/dashboard');
     } catch (error: any) {
       console.error('Login error details:', error);
       let message = 'An unknown error occurred.';

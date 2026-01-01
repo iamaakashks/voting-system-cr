@@ -37,6 +37,10 @@ const ElectionDetailPage: React.FC = () => {
     useEffect(() => {
         if (!id || !socket) return;
         
+        // Join election-specific room for targeted socket updates
+        socket.emit('join:election', id);
+        console.log(`Joined election room: ${id}`);
+        
         fetchElection();
 
         const handleUpdate = (data: { electionId: string }) => {
@@ -61,6 +65,10 @@ const ElectionDetailPage: React.FC = () => {
         socket.on('election:stopped', handleElectionStopped);
 
         return () => {
+            // Leave room when navigating away
+            socket.emit('leave:election', id);
+            console.log(`Left election room: ${id}`);
+            
             socket.off('vote:new', handleUpdate);
             socket.off('election:started', handleUpdate);
             socket.off('election:ended', handleUpdate);
@@ -85,7 +93,15 @@ const ElectionDetailPage: React.FC = () => {
             };
 
             const keyPair = await getOrCreateKeyPair();
-            const signature = signMessage(JSON.stringify(ballot), keyPair.secretKey);
+            const ballotString = JSON.stringify(ballot);
+            
+            console.log('=== Client Voting Debug ===');
+            console.log('Ballot object:', ballot);
+            console.log('Ballot stringified:', ballotString);
+            console.log('Public key (hex):', Array.from(keyPair.publicKey).map(b => b.toString(16).padStart(2, '0')).join(''));
+            console.log('===========================');
+            
+            const signature = signMessage(ballotString, keyPair.secretKey);
 
             const response = await postSignedVote(ballot, signature);
             

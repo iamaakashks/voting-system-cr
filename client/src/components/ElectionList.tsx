@@ -31,7 +31,7 @@ const StatusPill: React.FC<{ startTime: string; endTime: string }> = ({ startTim
       : s.text === 'Upcoming'
       ? 'bg-yellow-500/10 text-yellow-300'
       : 'bg-rose-500/10 text-rose-300';
-  return <span className={`px-3 py-1 rounded-full text-sm font-semibold ${classes}`}>{s.text}</span>;
+  return <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${classes}`}>{s.text}</span>;
 };
 
 /* Premium card for teacher + student unified */
@@ -81,7 +81,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
 
         <div className="flex items-start justify-between mb-3">
           <div>
-            <h3 className="text-lg md:text-xl font-semibold text-white">{election.title}</h3>
+            <h3 className="text-lg font-semibold text-white">{election.title}</h3>
             <p className="text-sm text-gray-400 mt-1 max-w-[36ch]">{election.description}</p>
           </div>
           <div className="ml-4">
@@ -90,7 +90,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
         </div>
 
         <div className="mt-4 flex-1">
-          <ul className="text-sm text-gray-400 space-y-2">
+          <ul className="text-xs text-gray-400 space-y-2">
             <li>Starts: <span className="text-gray-300">{new Date(election.startTime).toLocaleString()}</span></li>
             <li>Ends: <span className="text-gray-300">{new Date(election.endTime).toLocaleString()}</span></li>
             <li>Candidates: <span className="text-gray-300">{election.candidates.length}</span></li>
@@ -113,7 +113,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
         <div className="mt-5">
           <button
             onClick={(e) => { e.stopPropagation(); onSelect(election.id); }}
-            className="w-full py-2.5 rounded-xl bg-white text-black font-bold shadow-lg hover:bg-gray-100 transition-all active:scale-95"
+            className="w-full py-2.5 rounded-xl bg-white text-black font-bold text-sm shadow-lg hover:bg-gray-100 transition-all active:scale-95"
           >
             View Details →
           </button>
@@ -123,7 +123,7 @@ const ElectionCard: React.FC<{ election: Election; onSelect: (id: string) => voi
   );
 };
 
-const ElectionList: React.FC<ElectionListProps> = ({ elections: initialElections, onSelectElection, userRole }) => {
+const ElectionList: React.FC<ElectionListProps> = ({ elections: initialElections, onSelectElection, userRole, onBack }) => {
   const [elections, setElections] = useState(initialElections);
   const { socket } = useSocket();
   const { currentUser } = useAuth();
@@ -170,16 +170,26 @@ const ElectionList: React.FC<ElectionListProps> = ({ elections: initialElections
   if (elections.length === 0) {
     return (
       <div className="py-16 text-center">
-        <h2 className="text-3xl font-bold text-white">No Elections Found</h2>
-        <p className="text-gray-400 mt-3">{userRole === 'student' ? "There are currently no scheduled elections." : "You haven't created any elections yet."}</p>
+        <h2 className="text-2xl font-bold text-white">No Elections Found</h2>
+        <p className="text-sm text-gray-400 mt-3">{userRole === 'student' ? "There are currently no scheduled elections." : "You haven't created any elections yet."}</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
-      <motion.h2 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="text-4xl font-extrabold text-white text-center mb-2">{title}</motion.h2>
-      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="text-lg text-gray-400 text-center mb-10 max-w-2xl mx-auto">{subtitle}</motion.p>
+    <div className="max-w-7xl mx-auto relative">
+      {/* Back Button (if provided) */}
+      {onBack && (
+        <button
+          onClick={onBack}
+          className="absolute -top-12 left-0 text-sm text-gray-300 hover:text-white transition group"
+        >
+          ← Back
+        </button>
+      )}
+
+      <motion.h2 initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="text-2xl font-bold text-white text-center mb-2">{title}</motion.h2>
+      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }} className="text-sm text-gray-400 text-center mb-10 max-w-2xl mx-auto">{subtitle}</motion.p>
 
       <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {elections.map(e => (

@@ -1,4 +1,5 @@
 import express, { Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import { protect, AuthRequest } from '../middleware/auth';
 import Election from '../models/Election';
 import Ticket from '../models/Ticket';
@@ -12,10 +13,20 @@ import { io } from '../index';
 
 const router = express.Router();
 
+// Rate limiter for vote casting - prevents spam/flooding
+const voteRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute window
+  max: 10, // Max 10 vote attempts per minute per IP
+  message: 'Too many vote attempts from this IP, please try again after a minute',
+  standardHeaders: true,
+  legacyHeaders: false,
+  skipSuccessfulRequests: true, // Only count failed attempts
+});
+
 // @route   POST api/vote
 // @desc    Cast a vote with a digital signature
 // @access  Private (Student)
-router.post('/', protect, async (req: AuthRequest, res: Response) => {
+router.post('/', voteRateLimiter, protect, async (req: AuthRequest, res: Response) => {
   if (req.user?.role !== 'student') {
     return res.status(403).json({ message: 'Not authorized' });
   }
@@ -27,9 +38,16 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
   try {
     // 1. Get student and public key
     const student = await Student.findById(studentId);
-    if (!student || !student.publicKey) {
+    if (!student) {
+      return res.status(400).json({ message: 'Student not found.' });
+    }
+    if (!student.publicKey) {
       return res.status(400).json({ message: 'Public key not found for student. Please re-login to generate a key.' });
     }
+    
+    console.log('Student found:', student.name, 'USN:', student.usn);
+    console.log('Public key exists:', !!student.publicKey);
+    console.log('Public key length:', student.publicKey.length);
 
     // 2. Validate election
     const election = await Election.findById(electionId);
@@ -61,7 +79,18 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     const signatureBytes = Buffer.from(signature, 'base64');
     const publicKeyBytes = Buffer.from(student.publicKey, 'hex');
 
+    console.log('=== Signature Verification Debug ===');
+    console.log('Ballot received:', ballot);
+    console.log('Ballot stringified:', message);
+    console.log('Message bytes length:', messageBytes.length);
+    console.log('Signature bytes length:', signatureBytes.length);
+    console.log('Public key bytes length:', publicKeyBytes.length);
+    console.log('Public key (hex):', student.publicKey);
+
     const isVerified = nacl.sign.detached.verify(messageBytes, signatureBytes, publicKeyBytes);
+
+    console.log('Signature verification result:', isVerified);
+    console.log('====================================');
 
     if (!isVerified) {
       return res.status(400).json({ message: 'Invalid signature. Vote rejected.' });
@@ -99,11 +128,9 @@ router.post('/', protect, async (req: AuthRequest, res: Response) => {
     
     console.log('Transaction created:', transaction._id, 'with ballot hash:', ballotHash.substring(0, 16) + '...');
 
-    // Broadcast the update to all connected clients
-    io.emit('vote:new', { electionId: electionId });
-    
-    // Broadcast election results update for real-time charts/graphs
-    io.emit('election:results:updated', { electionId: electionId });
+    // Broadcast only to clients viewing this specific election (room-based)
+    io.to(`election:${electionId}`).emit('vote:new', { electionId: electionId });
+    io.to(`election:${electionId}`).emit('election:results:updated', { electionId: electionId });
 
     console.log(`Vote cast successfully for election ${electionId}, ballot hash: ${ballotHash}`);
     

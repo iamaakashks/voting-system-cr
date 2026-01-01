@@ -93,7 +93,15 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
   };
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="max-w-3xl mx-auto relative pt-10">
+      {/* Back/Cancel Button */}
+      <button
+        onClick={onCancel}
+        className="absolute top-0 left-0 text-sm text-gray-300 hover:text-white transition group"
+      >
+        ← Back
+      </button>
+
       <div className="relative">
         <div className="absolute -top-20 left-0 h-56 w-56 bg-white/5 rounded-full blur-[120px]" />
         <div className="absolute bottom-0 right-0 h-64 w-64 bg-white/6 rounded-full blur-[140px]" />
@@ -101,25 +109,24 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
 
       <div className="bg-white/[0.04] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 shadow-2xl">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-white">Create New Election</h2>
-          <button onClick={onCancel} className="text-gray-300 hover:text-white">Cancel</button>
+          <h2 className="text-2xl font-bold text-white">Create New Election</h2>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Title</label>
-            <input value={title} onChange={e => setTitle(e.target.value)} required className="w-full rounded-lg p-3 bg-white/[0.06] border border-white/8 text-white outline-none focus:ring-1 focus:ring-white/40"/>
+            <label className="block text-xs font-medium text-gray-300 mb-1.5">Title</label>
+            <input value={title} onChange={e => setTitle(e.target.value)} required className="w-full rounded-lg px-4 py-2.5 bg-white/[0.06] border border-white/10 text-white text-sm outline-none focus:ring-1 focus:ring-white/40"/>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Description (optional)</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full rounded-lg p-3 bg-white/[0.06] border border-white/8 text-white outline-none focus:ring-1 focus:ring-white/40"/>
+            <label className="block text-xs font-medium text-gray-300 mb-1.5">Description (optional)</label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} rows={3} className="w-full rounded-lg px-4 py-2.5 bg-white/[0.06] border border-white/10 text-white text-sm outline-none focus:ring-1 focus:ring-white/40"/>
           </div>
 
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Branch</label>
-              <select value={branch} onChange={e => setBranch(e.target.value)} className="w-full rounded-lg p-2 bg-white/[0.06] border border-white/8 text-white">
+              <label className="block text-xs font-medium text-gray-300 mb-1.5">Branch</label>
+              <select value={branch} onChange={e => setBranch(e.target.value)} className="w-full rounded-lg px-3 py-2.5 bg-white/[0.06] border border-white/10 text-white text-sm [&>option]:bg-gray-800 [&>option]:text-white">
                 <option value="cs">Computer Science (CS)</option>
                 <option value="ci">CS - AI/ML (CI)</option>
                 <option value="ise">Information Science (ISE)</option>
@@ -127,8 +134,8 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
             </div>
 
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Section</label>
-              <select value={section} onChange={e => setSection(e.target.value)} className="w-full rounded-lg p-2 bg-white/[0.06] border border-white/8 text-white">
+              <label className="block text-xs font-medium text-gray-300 mb-1.5">Section</label>
+              <select value={section} onChange={e => setSection(e.target.value)} className="w-full rounded-lg px-3 py-2.5 bg-white/[0.06] border border-white/10 text-white text-sm [&>option]:bg-gray-800 [&>option]:text-white">
                 <option value="a">Section A</option>
                 <option value="b">Section B</option>
                 <option value="c">Section C</option>
@@ -136,8 +143,8 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
             </div>
 
             <div>
-              <label className="block text-sm text-gray-300 mb-1">Batch Year</label>
-              <select value={admissionYear} onChange={handleAdmissionYearChange} className="w-full rounded-lg p-2 bg-white/[0.06] border border-white/8 text-white">
+              <label className="block text-xs font-medium text-gray-300 mb-1.5">Batch Year</label>
+              <select value={admissionYear} onChange={handleAdmissionYearChange} className="w-full rounded-lg px-3 py-2.5 bg-white/[0.06] border border-white/10 text-white text-sm [&>option]:bg-gray-800 [&>option]:text-white">
                 <option value={2022}>2022</option>
                 <option value={2023}>2023</option>
                 <option value={2024}>2024</option>
@@ -147,13 +154,13 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Start Time</label>
-            <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full rounded-lg p-3 bg-white/[0.06] border border-white/8 text-white"/>
+            <label className="block text-xs font-medium text-gray-300 mb-1.5">Start Time</label>
+            <input type="datetime-local" value={startTime} onChange={e => setStartTime(e.target.value)} className="w-full rounded-lg px-4 py-2.5 bg-white/[0.06] border border-white/10 text-white text-sm"/>
             <p className="text-xs text-gray-400 mt-1">Election will run for 10 minutes from the start time.</p>
           </div>
 
           <div>
-            <label className="block text-sm text-gray-300 mb-1">Candidates</label>
+            <label className="block text-xs font-medium text-gray-300 mb-1.5">Candidates</label>
             <p className="text-xs text-gray-400 mb-2">Search for students (branch/section/year must be set).</p>
             <AsyncSelect
               key={`${admissionYear}-${branch}-${section}`}
@@ -164,22 +171,27 @@ const CreateElectionForm: React.FC<CreateElectionFormProps> = ({ onSubmit, onCan
               onChange={(s) => setCandidates(s as CandidateOption[])}
               placeholder="Type student name or USN..."
               styles={{
-                control: base => ({ ...base, backgroundColor: '#1F2937', borderColor: 'rgba(255,255,255,0.06)' }),
-                input: base => ({ ...base, color: 'white' }),
-                menu: base => ({ ...base, backgroundColor: '#111827' }),
-                option: (base, state) => ({ ...base, backgroundColor: state.isFocused ? '#111827' : '#0B0F14', color: 'white' }),
-                multiValue: base => ({ ...base, backgroundColor: '#374151' }),
-                multiValueLabel: base => ({ ...base, color: 'white' }),
+                control: base => ({ ...base, backgroundColor: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.1)', padding: '2px', borderRadius: '0.5rem', minHeight: '42px' }),
+                input: base => ({ ...base, color: 'white', fontSize: '14px', margin: 0, padding: 0 }),
+                singleValue: base => ({ ...base, color: 'white', fontSize: '14px' }),
+                placeholder: base => ({ ...base, fontSize: '14px', color: '#9CA3AF' }),
+                valueContainer: base => ({ ...base, padding: '2px 8px' }),
+                menu: base => ({ ...base, backgroundColor: '#111827', fontSize: '14px', marginTop: '4px', marginBottom: 0 }),
+                menuList: base => ({ ...base, padding: 0, maxHeight: '200px' }),
+                option: (base, state) => ({ ...base, backgroundColor: state.isFocused ? '#1F2937' : '#111827', color: 'white', fontSize: '14px', padding: '8px 12px' }),
+                multiValue: base => ({ ...base, backgroundColor: '#374151', borderRadius: '0.25rem', margin: '2px' }),
+                multiValueLabel: base => ({ ...base, color: 'white', fontSize: '12px', fontWeight: 500, padding: '2px 6px' }),
+                multiValueRemove: base => ({ ...base, color: '#9CA3AF', ':hover': { backgroundColor: '#4B5563', color: 'white' } }),
               }}
             />
           </div>
 
           <div className="flex justify-end gap-3">
-            <button type="button" onClick={onCancel} className="px-5 py-2 rounded-md text-gray-300 hover:text-white">Cancel</button>
+            <button type="button" onClick={onCancel} className="px-5 py-2.5 rounded-lg text-sm font-medium text-gray-300 hover:text-white hover:bg-white/5 transition">Cancel</button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2 rounded-md bg-white text-black font-semibold hover:bg-gray-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              className="px-6 py-2.5 rounded-lg bg-white text-black text-sm font-bold hover:bg-gray-200 disabled:bg-gray-600 disabled:cursor-not-allowed transition shadow-lg"
             >
               {isSubmitting ? 'Creating...' : 'Create Election'}
             </button>

@@ -35,10 +35,22 @@ app.use(helmet());
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Socket.IO connection
+// Socket.IO connection with room-based broadcasting for scalability
 io.on('connection', (socket) => {
   console.log(`✓ Socket connected: ${socket.id}`);
   console.log(`✓ Total connections: ${io.engine.clientsCount}`);
+  
+  // Join election-specific room to reduce broadcast overhead
+  socket.on('join:election', (electionId: string) => {
+    socket.join(`election:${electionId}`);
+    console.log(`Socket ${socket.id} joined election room: ${electionId}`);
+  });
+  
+  // Leave election room when navigating away
+  socket.on('leave:election', (electionId: string) => {
+    socket.leave(`election:${electionId}`);
+    console.log(`Socket ${socket.id} left election room: ${electionId}`);
+  });
   
   socket.on('disconnect', () => {
     console.log(`✗ Socket disconnected: ${socket.id}`);

@@ -14,4 +14,9 @@ const VoteSchema: Schema = new Schema({
   timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
 
+// Indexes for performance with high concurrency
+VoteSchema.index({ election: 1 }); // Fast election vote queries
+VoteSchema.index({ election: 1, timestamp: -1 }); // Timeline queries
+VoteSchema.index({ ballotHash: 1 }, { unique: true }); // Duplicate prevention
+
 export default mongoose.model<IVote>('Vote', VoteSchema);

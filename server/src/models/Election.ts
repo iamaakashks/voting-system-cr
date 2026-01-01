@@ -47,4 +47,9 @@ const ElectionSchema: Schema = new Schema({
   toObject: { virtuals: true }
 });
 
+// Indexes for fast queries with multiple concurrent users
+ElectionSchema.index({ status: 1, startTime: 1 }); // Active elections lookup
+ElectionSchema.index({ branch: 1, section: 1, admissionYear: 1 }); // Student elections
+ElectionSchema.index({ createdBy: 1 }); // Teacher dashboard
+
 export default mongoose.model<IElection>('Election', ElectionSchema);

@@ -28,7 +28,7 @@ const Dashboard: React.FC<DashboardProps> = ({ elections, onCreateNew }) => {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45 }}
-      className="min-h-screen bg-[#0B0E14] p-6"
+      className="bg-[#0B0E14] p-6"
     >
       {currentUser.role === 'teacher' ? (
         <TeacherDashboard

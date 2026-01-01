@@ -74,7 +74,7 @@ const VoterTurnoutAnalytics: React.FC<VoterTurnoutAnalyticsProps> = ({
 
 
   return (
-    <div className="w-full space-y-6" style={{ padding: isLightTheme ? '1rem' : '0', backgroundColor: isLightTheme ? 'white' : 'transparent'}}>
+    <div className="w-full space-y-4" style={{ padding: isLightTheme ? '1rem' : '0', backgroundColor: isLightTheme ? 'white' : 'transparent', marginBottom: 0}}>
       <h4 className={`text-xl font-bold mb-4 text-center ${isLightTheme ? 'text-black' : 'text-white'}`}>
         Voter Turnout Analytics
       </h4>

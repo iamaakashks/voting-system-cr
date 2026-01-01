@@ -15,5 +15,9 @@ const TransactionSchema: Schema = new Schema({
   timestamp: { type: Date, default: Date.now }
 }, { timestamps: true });
 
+// Indexes for transaction queries and audit trail
+TransactionSchema.index({ election: 1, timestamp: -1 }); // Election transactions
+TransactionSchema.index({ ballotHash: 1 }, { unique: true }); // Fast lookup
+
 export default mongoose.model<ITransaction>('Transaction', TransactionSchema);
 

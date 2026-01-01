@@ -10,7 +10,7 @@ import ResultsChart from "./ResultsChart";
 import ResultsTable from "./ResultsTable";
 import VotingTimelineChart from "./VotingTimelineChart";
 import VoterTurnoutAnalytics from "./VoterTurnoutAnalytics";
-import PrintableReport from "./PrintableReport";
+import PrintOptimizedReport from "./PrintOptimizedReport";
 import {
   requestVotingTicket,
   getElectionTimeline,
@@ -18,8 +18,9 @@ import {
   getElectionParticipants,
   Participant,
 } from "../services/api";
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import { generateReportId } from "../utils/reportAnalytics";
+import { useReactToPrint } from 'react-to-print';
+import QRCode from 'qrcode';
 
 interface ElectionDetailProps {
     election: Election;
@@ -465,6 +466,10 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
   const [loadingStats, setLoadingStats] = useState(false);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
   const [isDownloadingCsv, setIsDownloadingCsv] = useState(false);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
+  
+  // Ref for print component
+  const printRef = React.useRef<HTMLDivElement>(null);
 
   const buttonState = getButtonState(election, user);
   const { timeLeft, label } = useCountdown(election.startTime, election.endTime);
@@ -473,7 +478,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
   const isElectionLive = new Date() > new Date(election.startTime) && !isElectionOver;
   const showResults = isElectionOver || user?.role === "teacher";
 
-  // Fetch analytics (unchanged logic)
+  // Fetch analytics and generate QR code
   useEffect(() => {
     if (!showResults) return;
     let mounted = true;
@@ -487,6 +492,19 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
         if (!mounted) return;
         setTimelineData(timeline);
         setTurnoutData(turnout);
+        
+        // Generate QR code for verification
+        const reportId = generateReportId(election);
+        const verificationUrl = `${window.location.origin}/verify/${reportId}`;
+        const qrUrl = await QRCode.toDataURL(verificationUrl, {
+          width: 200,
+          margin: 1,
+          color: {
+            dark: '#000000',
+            light: '#FFFFFF'
+          }
+        });
+        setQrCodeDataUrl(qrUrl);
       } catch (err) {
         console.error("Error fetching statistics:", err);
       } finally {
@@ -527,68 +545,51 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
     setTicketError(null);
   };
   
-  const handleDownload = async () => {
-    setIsDownloadingPdf(true);
-    
-    try {
-      // Get all sections
-      const sections = [
-        { id: 'pdf-section-header', name: 'Header' },
-        { id: 'pdf-section-table', name: 'Results Table' },
-        { id: 'pdf-section-pie', name: 'Pie Chart' },
-        { id: 'pdf-section-timeline', name: 'Timeline' },
-        { id: 'pdf-section-turnout', name: 'Turnout' },
-      ];
-
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      let currentY = margin;
-      let isFirstPage = true;
-
-      for (const section of sections) {
-        const element = document.getElementById(section.id);
-        if (!element) continue;
-
-        // Capture section as image
-        const canvas = await html2canvas(element, {
-          useCORS: true,
-          scale: 2,
-          backgroundColor: '#FFFFFF',
-          logging: false,
-        });
-
-        const imgData = canvas.toDataURL('image/png');
-        const imgWidth = pageWidth - 2 * margin;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        // Check if we need a new page
-        if (!isFirstPage && currentY + imgHeight > pageHeight - margin) {
-          pdf.addPage();
-          currentY = margin;
-        }
-
-        // Add image to PDF
-        pdf.addImage(imgData, 'PNG', margin, currentY, imgWidth, imgHeight);
-        currentY += imgHeight + 5; // Add 5mm spacing between sections
-
-        isFirstPage = false;
-
-        // If this section is too tall and we're near the bottom, start fresh on next page
-        if (currentY > pageHeight - 40) {
-          pdf.addPage();
-          currentY = margin;
+  // Use react-to-print for fast PDF generation
+  const handleDownload = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: `VeriVote_Report_${generateReportId(election)}`,
+    onBeforeGetContent: async () => {
+      setIsDownloadingPdf(true);
+      
+      // Make the hidden report temporarily visible so charts can render
+      const reportElement = printRef.current;
+      if (reportElement) {
+        const parent = reportElement.parentElement;
+        if (parent) {
+          parent.style.position = 'fixed';
+          parent.style.left = '0';
+          parent.style.top = '0';
+          parent.style.opacity = '0';
+          parent.style.pointerEvents = 'none';
+          parent.style.zIndex = '-9999';
         }
       }
-
-      pdf.save(`${election.title.replace(/ /g, '_')}_results.pdf`);
-    } catch (err) {
-      console.error("Error generating PDF:", err);
-    } finally {
+      
+      // Wait longer for charts to fully render
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return Promise.resolve();
+    },
+    onAfterPrint: () => {
+      // Hide the report again
+      const reportElement = printRef.current;
+      if (reportElement) {
+        const parent = reportElement.parentElement;
+        if (parent) {
+          parent.style.position = 'absolute';
+          parent.style.left = '-9999px';
+          parent.style.top = '0';
+          parent.style.opacity = '1';
+        }
+      }
       setIsDownloadingPdf(false);
-    }
-  };
+    },
+    onPrintError: (error) => {
+      console.error("Error generating PDF:", error);
+      alert('Failed to generate PDF. Please try again.');
+      setIsDownloadingPdf(false);
+    },
+  });
 
   const handleDownloadCSV = async () => {
     setIsDownloadingCsv(true);
@@ -632,10 +633,13 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
   // Render — main UI up to the candidates list (keeps original layout)
   // ----------------------------------------------------------------
   return (
-    <div className="space-y-12 pb-20 transition-colors duration-300">
+    <div className="space-y-8 pb-8 transition-colors duration-300">
       {/* Back */}
-      <button onClick={onBack} className="text-gray-900 dark:text-white font-semibold hover:text-[#b4a9e6] dark:hover:text-[#b4a9e6] transition-colors flex items-center gap-2">
-        &larr; Back to Dashboard
+      <button 
+        onClick={onBack} 
+        className="text-gray-300 hover:text-white transition group"
+      >
+        ← Back
       </button>
       {/* Modal / Overlays / Notifications */}
       <VoteModal
@@ -657,22 +661,22 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
       
 
       {/* Header */}
-      <h2 className="text-4xl font-extrabold text-center text-gray-900 dark:text-white">{election.title}</h2>
+      <h2 className="text-2xl font-bold text-center text-gray-900 dark:text-white">{election.title}</h2>
       {/* Hide everything for students until election starts */}
       {buttonState.text === "Voting Not Started" && user?.role === "student" ? (
         // Show only countdown for students when election hasn't started
         <div className="text-center py-20">
-          <div className="inline-block bg-white dark:bg-gradient-to-br dark:from-[#b4a9e6]/20 dark:to-[#6d7382]/20 backdrop-blur-lg p-12 rounded-2xl border border-gray-200 dark:border-[#b4a9e6]/30 shadow-xl dark:shadow-[0_0_30px_#b4a9e644]">
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">{election.title}</h2>
-            {election.description && <p className="text-gray-600 dark:text-gray-300 mb-8">{election.description}</p>}
-            <p className="text-xl text-gray-500 dark:text-gray-300 mb-4">Election starts in</p>
-            <p className="text-5xl font-bold text-[#b4a9e6] font-mono tracking-wider">{timeLeft}</p>
-            <p className="text-sm text-gray-400 mt-8">You can view candidates and cast your vote once the election begins</p>
+          <div className="inline-block bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg p-12 rounded-2xl border border-[#b4a9e6]/30 shadow-xl shadow-[0_0_30px_#b4a9e644] dark:shadow-[0_0_30px_#b4a9e644]">
+            <h2 className="text-2xl font-bold text-white mb-6">{election.title}</h2>
+            {election.description && <p className="text-sm text-gray-300 mb-8">{election.description}</p>}
+            <p className="text-lg text-gray-300 mb-4">Election starts in</p>
+            <p className="text-4xl font-bold text-[#b4a9e6] font-mono tracking-wider drop-shadow-[0_0_10px_#b4a9e6]">{timeLeft}</p>
+            <p className="text-xs text-gray-400 mt-8">You can view candidates and cast your vote once the election begins</p>
           </div>
         </div>
       ) : (
         <>
-          {election.description && <p className="text-center text-gray-600 dark:text-gray-400">{election.description}</p>}
+          {election.description && <p className="text-center text-sm text-gray-600 dark:text-gray-400">{election.description}</p>}
 
           {/* Timer */}
           {isElectionLive && (
@@ -685,8 +689,8 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
                   transition-all duration-300
                 "
               >
-                <p className="text-gray-500 dark:text-gray-300">{label}</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white font-mono tracking-widest">{timeLeft}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-300">{label}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white font-mono tracking-widest">{timeLeft}</p>
               </div>
             </div>
           )}
@@ -696,22 +700,22 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
             <div className="text-center">
               <button
                 onClick={() => onStopElection(election.id)}
-                className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-md transition-all hover:shadow-[0_0_14px_#ff4d4d77]"
+                className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-bold transition-all hover:shadow-[0_0_14px_#ff4d4d77]"
               >
                 Stop Election Now
               </button>
             </div>
           )}
           
-          <h3 className="text-2xl font-bold text-center text-gray-900 dark:text-white">Candidates</h3>
+          <h3 className="text-lg font-semibold text-center text-gray-900 dark:text-white">Candidates</h3>
 
           {/* Voting / Thanks / Closed states will be rendered below */}
           {election.userVoted && user?.role !== "teacher" ? (
             <ThanksForVoting />
           ) : isElectionOver ? (
             <div className="text-center py-12">
-              <h4 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Voting is Closed</h4>
-              <p className="text-gray-600 dark:text-gray-400">The voting period has ended.</p>
+              <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Voting is Closed</h4>
+              <p className="text-sm text-gray-600 dark:text-gray-400">The voting period has ended.</p>
             </div>
           ) : (
             <>
@@ -744,7 +748,7 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
       =========================== */}
     <div id="results-analytics" className="relative">
       <div className="flex justify-between items-center mt-12 mb-4">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
           {showResults
             ? isElectionOver
               ? "Final Results"
@@ -758,38 +762,38 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
             <button
               onClick={handleDownloadCSV}
               disabled={isDownloadingCsv}
-              className="px-4 py-2 bg-green-500 text-white rounded-lg font-semibold hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
+              className="px-4 py-2 bg-green-500 text-white rounded-lg font-bold text-sm hover:bg-green-600 disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
             >
               {isDownloadingCsv ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Downloading...
+                  Exporting...
                 </>
               ) : (
                 <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  CSV
+                  Voter List (CSV)
                 </>
               )}
             </button>
             <button
               onClick={handleDownload}
               disabled={isDownloadingPdf}
-              className="px-4 py-2 bg-[#b4a9e6] text-white rounded-lg font-semibold hover:bg-[#a86aff] disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
+              className="px-4 py-2 bg-[#b4a9e6] text-white rounded-lg font-bold text-sm hover:bg-[#a86aff] disabled:bg-gray-600 disabled:cursor-not-allowed transition-colors flex items-center gap-2 shadow-lg"
             >
               {isDownloadingPdf ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Downloading...
+                  Generating...
                 </>
               ) : (
                 <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  PDF
+                  Results Report (PDF)
                 </>
               )}
             </button>
@@ -835,8 +839,8 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
 
                   {winners.map((winner) => (
                     <div key={winner.id} className="mt-2">
-                      <p className="text-2xl font-extrabold text-gray-900 dark:text-white">{winner.name}</p>
-                      <p className="text-gray-500 dark:text-gray-400">
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{winner.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
                         Votes: {election.results[winner.id]}
                       </p>
                     </div>
@@ -922,15 +926,15 @@ const ElectionDetail: React.FC<ElectionDetailProps> = ({
         )}
       </div>
 
-      {/* Hidden PrintableReport for PDF generation */}
+      {/* Hidden PrintOptimizedReport for PDF generation */}
       <div style={{ position: 'absolute', left: '-9999px', top: 0 }}>
-        <div id="printable-report">
-          <PrintableReport 
-            election={election}
-            timelineData={timelineData}
-            turnoutData={turnoutData}
-          />
-        </div>
+        <PrintOptimizedReport 
+          ref={printRef}
+          election={election}
+          timelineData={timelineData}
+          turnoutData={turnoutData}
+          qrCodeDataUrl={qrCodeDataUrl}
+        />
       </div>
       </div>
     </div>
